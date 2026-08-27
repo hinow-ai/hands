@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gesture Nav</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #16181d;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --accent: #16a34a;
+        --accent-off: #64748b;
+        --card: #f7f8fa;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16181d;
+          --fg: #f3f4f6;
+          --muted: #9aa1ac;
+          --line: #2a2e37;
+          --card: #1d2027;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        width: 320px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      h1 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
+      .status { font-size: 11px; color: var(--muted); margin-top: 2px; }
+      .status.on { color: var(--accent); }
+      .status.err { color: #dc2626; }
+      button.toggle {
+        appearance: none;
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 16px;
+        font: 600 13px inherit;
+        color: #fff;
+        background: var(--accent-off);
+        cursor: pointer;
+        transition: background .15s ease;
+      }
+      button.toggle.on { background: var(--accent); }
+      section { padding: 12px 16px; }
+      .legend { display: grid; gap: 7px; }
+      .row {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 7px 9px;
+        background: var(--card);
+        border-radius: 7px;
+      }
+      .row .ico { font-size: 18px; text-align: center; }
+      .row .txt strong { font-weight: 600; display: block; }
+      .row .txt span { color: var(--muted); font-size: 11.5px; }
+      .tuning { border-top: 1px solid var(--line); }
+      .field { display: grid; gap: 5px; margin-bottom: 12px; }
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .field label b { color: var(--fg); font-variant-numeric: tabular-nums; font-weight: 600; }
+      input[type="range"] { width: 100%; accent-color: var(--accent); }
+      .check { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+      footer {
+        padding: 10px 16px 14px;
+        color: var(--muted);
+        font-size: 11px;
+        border-top: 1px solid var(--line);
+      }
+      kbd {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font: 500 10.5px ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Gesture Nav</h1>
+        <div class="status" id="status">Desligado</div>
+      </div>
+      <button class="toggle" id="toggle">Ativar</button>
+    </header>
+
+    <section class="legend">
+      <div class="row">
+        <div class="ico">☝️</div>
+        <div class="txt"><strong>Apontar</strong><span>Move o cursor</span></div>
+      </div>
+      <div class="row">
+        <div class="ico">🤏</div>
+        <div class="txt"><strong>Pinça</strong><span>Clica; segure e mova para arrastar</span></div>
+      </div>
+      <div class="row">
+        <div class="ico">✌️</div>
+        <div class="txt"><strong>Dois dedos</strong><span>Rola a página, com inércia</span></div>
+      </div>
+      <div class="row">
+        <div class="ico">✊</div>
+        <div class="txt"><strong>Punho</strong><span>Trava o cursor para reposicionar o braço</span></div>
+      </div>
+      <div class="row">
+        <div class="ico">🤏🤏</div>
+        <div class="txt"><strong>Duas pinças</strong><span>Zoom pela distância entre as mãos</span></div>
+      </div>
+      <div class="row">
+        <div class="ico">👈</div>
+        <div class="txt"><strong>Polegar ao lado</strong><span>Voltar e avançar no histórico</span></div>
+      </div>
+    </section>
+
+    <section class="tuning">
+      <div class="field">
+        <label>Área de alcance <b id="areaVal">55%</b></label>
+        <input type="range" id="area" min="30" max="90" step="5" value="55" />
+      </div>
+      <div class="field">
+        <label>Estabilidade do cursor <b id="smoothVal">0.8</b></label>
+        <input type="range" id="smooth" min="30" max="250" step="10" value="80" />
+      </div>
+      <div class="field">
+        <label>Velocidade da rolagem <b id="scrollVal">2.6×</b></label>
+        <input type="range" id="scroll" min="10" max="60" step="2" value="26" />
+      </div>
+      <label class="check">
+        <input type="checkbox" id="hud" checked />
+        Mostrar painel de estado na página
+      </label>
+    </section>
+
+    <footer>
+      Atalho <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. A câmera roda só enquanto estiver ativo e
+      o vídeo nunca sai do seu computador.
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

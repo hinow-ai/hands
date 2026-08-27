@@ -1,0 +1,33 @@
+{
+  "name": "gesture-nav",
+  "version": "0.1.0",
+  "description": "Controle total de navegação web por gestos de mão via webcam — extensão Chrome MV3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "fetch:model": "node scripts/fetch-model.mjs",
+    "test": "node tests/run.mjs",
+    "test:legacy": "node tests/compare-legacy.mjs",
+    "demo": "node scripts/serve-demo.mjs"
+  },
+  "keywords": [
+    "gesture",
+    "hand-tracking",
+    "mediapipe",
+    "accessibility",
+    "touchless",
+    "chrome-extension"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3"
+  }
+}

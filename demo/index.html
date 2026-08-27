@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gesture Nav — campo de teste</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --card: #171a21;
+        --line: #262b35;
+        --fg: #e8eaed;
+        --muted: #9aa1ac;
+        --accent: #22c55e;
+        --accent2: #38bdf8;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      header {
+        padding: 48px 32px 32px;
+        border-bottom: 1px solid var(--line);
+        text-align: center;
+      }
+      h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.02em; }
+      header p { margin: 0; color: var(--muted); }
+      main { max-width: 1000px; margin: 0 auto; padding: 32px; }
+      section {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 26px;
+        margin-bottom: 26px;
+      }
+      h2 { margin: 0 0 6px; font-size: 18px; }
+      .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 18px; }
+
+      .targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+      button.target {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: #1e222b;
+        color: var(--fg);
+        border-radius: 10px;
+        padding: 20px 12px;
+        font: 600 14px inherit;
+        cursor: pointer;
+        transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      }
+      button.target:hover { background: #252a35; border-color: #3a4150; transform: translateY(-2px); }
+      button.target.hit { background: var(--accent); color: #04140a; border-color: var(--accent); }
+
+      .counter {
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #10131a;
+        border-radius: 9px;
+        font: 500 13px ui-monospace, monospace;
+        color: var(--muted);
+      }
+      .counter b { color: var(--accent); }
+
+      .scrollbox {
+        height: 260px;
+        overflow-y: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        background: #10131a;
+      }
+      .scrollbox p { margin: 0 0 14px; }
+      .scrollbox .marker { color: var(--accent2); font-weight: 600; }
+
+      .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+      .gallery img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 10px;
+        display: block;
+        border: 1px solid var(--line);
+      }
+
+      .dragarea {
+        position: relative;
+        height: 300px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background:
+          repeating-linear-gradient(0deg, #141821 0 39px, #1a1f29 39px 40px),
+          repeating-linear-gradient(90deg, #141821 0 39px, #1a1f29 39px 40px);
+        overflow: hidden;
+        touch-action: none;
+      }
+      .puck {
+        position: absolute;
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #6ee7a8, #16a34a);
+        left: 40px;
+        top: 100px;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 600 11px inherit;
+        color: #04140a;
+        user-select: none;
+        box-shadow: 0 6px 18px rgba(0,0,0,.4);
+      }
+      .puck.grabbed { cursor: grabbing; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
+
+      .canvaswrap { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+      canvas { display: block; width: 100%; height: 300px; background: #10131a; touch-action: none; }
+
+      .log {
+        font: 12px/1.7 ui-monospace, monospace;
+        color: var(--muted);
+        background: #10131a;
+        border-radius: 9px;
+        padding: 14px;
+        max-height: 170px;
+        overflow-y: auto;
+      }
+      .log div { border-bottom: 1px solid #1a1f29; padding: 2px 0; }
+      .log b { color: var(--accent2); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Campo de teste</h1>
+      <p>Ative a extensão e exercite cada gesto aqui antes de sair para a web aberta.</p>
+    </header>
+
+    <main>
+      <section>
+        <h2>Alvos de clique</h2>
+        <p class="sub">Aponte para mover o cursor e feche a pinça para clicar. Alvos de tamanhos diferentes medem a precisão real.</p>
+        <div class="targets" id="targets"></div>
+        <div class="counter" id="counter">Cliques: <b>0</b> · Último alvo: —</div>
+      </section>
+
+      <section>
+        <h2>Rolagem</h2>
+        <p class="sub">Dois dedos e mova a mão. A caixa abaixo tem rolagem própria, então também testa se a rolagem encontra o container certo em vez de mover a página inteira.</p>
+        <div class="scrollbox" id="scrollbox"></div>
+      </section>
+
+      <section>
+        <h2>Arrastar</h2>
+        <p class="sub">Feche a pinça sobre o disco e mova a mão. É o mesmo mecanismo que faz o pan de um mapa.</p>
+        <div class="dragarea" id="dragarea">
+          <div class="puck" id="puck">arraste</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Zoom em imagem</h2>
+        <p class="sub">Pince com as duas mãos sobre uma foto e afaste-as. Punho fechado por um instante fecha o visualizador.</p>
+        <div class="gallery" id="gallery"></div>
+      </section>
+
+      <section>
+        <h2>Conteúdo de outra origem</h2>
+        <p class="sub">Sirva a demo também na porta 5600 (<code>PORT=5600 npm run demo</code>) e abra
+        <a href="/iframe-test.html" style="color:#38bdf8">a página de iframe</a>. O quadro embutido vem de
+        outra origem, onde nenhum evento sintético do frame de cima alcançaria — os comandos viajam por
+        postMessage até a cópia do content script que roda lá dentro.</p>
+      </section>
+
+      <section>
+        <h2>Canvas que trata os próprios eventos</h2>
+        <p class="sub">Este quadro cancela os eventos de roda, como faz um mapa. Serve para conferir que o gesto de zoom é entregue ao site em vez de rolar a página.</p>
+        <div class="canvaswrap"><canvas id="canvas"></canvas></div>
+        <div class="log" id="log"></div>
+      </section>
+    </main>
+
+    <script>
+      // ---------------------------------------------------------- alvos
+      const targets = document.getElementById('targets')
+      const counter = document.getElementById('counter')
+      let clicks = 0
+
+      const sizes = ['Grande', 'Médio', 'Pequeno', 'Mínimo', 'Canto', 'Extra']
+      sizes.forEach((label, i) => {
+        const b = document.createElement('button')
+        b.className = 'target'
+        b.textContent = label
+        // Alvos progressivamente menores medem até onde a precisão aguenta.
+        b.style.padding = `${22 - i * 3}px ${12 - i}px`
+        b.style.fontSize = `${15 - i}px`
+        b.addEventListener('click', () => {
+          clicks++
+          counter.innerHTML = `Cliques: <b>${clicks}</b> · Último alvo: ${label}`
+          b.classList.add('hit')
+          setTimeout(() => b.classList.remove('hit'), 320)
+        })
+        targets.appendChild(b)
+      })
+
+      // ---------------------------------------------------------- rolagem
+      const scrollbox = document.getElementById('scrollbox')
+      for (let i = 1; i <= 40; i++) {
+        const p = document.createElement('p')
+        p.innerHTML =
+          i % 5 === 0
+            ? `<span class="marker">— linha ${i} —</span>`
+            : `Linha ${i}. Texto de preenchimento para dar altura suficiente e permitir observar a inércia da rolagem depois que o gesto termina.`
+        scrollbox.appendChild(p)
+      }
+
+      // ---------------------------------------------------------- arrastar
+      const puck = document.getElementById('puck')
+      const dragarea = document.getElementById('dragarea')
+      let dragging = false
+      let grabDX = 0
+      let grabDY = 0
+
+      // Os handlers escutam eventos de ponteiro comuns — os mesmos que a
+      // extensão sintetiza. Nada aqui sabe que existe uma webcam envolvida.
+      puck.addEventListener('pointerdown', (e) => {
+        dragging = true
+        puck.classList.add('grabbed')
+        const r = puck.getBoundingClientRect()
+        grabDX = e.clientX - r.left
+        grabDY = e.clientY - r.top
+      })
+
+      window.addEventListener('pointermove', (e) => {
+        if (!dragging) return
+        const area = dragarea.getBoundingClientRect()
+        const x = Math.max(0, Math.min(area.width - puck.offsetWidth, e.clientX - area.left - grabDX))
+        const y = Math.max(0, Math.min(area.height - puck.offsetHeight, e.clientY - area.top - grabDY))
+        puck.style.left = `${x}px`
+        puck.style.top = `${y}px`
+      })
+
+      window.addEventListener('pointerup', () => {
+        dragging = false
+        puck.classList.remove('grabbed')
+      })
+
+      // ---------------------------------------------------------- galeria
+      const gallery = document.getElementById('gallery')
+      const seeds = ['montanha', 'oceano', 'floresta', 'deserto', 'cidade', 'aurora']
+      seeds.forEach((seed, i) => {
+        const img = document.createElement('img')
+        // SVG embutido: a demo funciona offline, sem depender de rede.
+        const hue = (i * 57) % 360
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="hsl(${hue},60%,45%)"/>
+            <stop offset="100%" stop-color="hsl(${(hue + 60) % 360},55%,25%)"/>
+          </linearGradient></defs>
+          <rect width="600" height="400" fill="url(#g)"/>
+          <circle cx="${120 + i * 60}" cy="140" r="70" fill="rgba(255,255,255,0.18)"/>
+          <text x="300" y="360" font-family="sans-serif" font-size="34" fill="rgba(255,255,255,.85)"
+                text-anchor="middle">${seed}</text>
+        </svg>`
+        img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+        img.alt = seed
+        gallery.appendChild(img)
+      })
+
+      // ---------------------------------------------------------- canvas
+      const canvas = document.getElementById('canvas')
+      const log = document.getElementById('log')
+      const ctx = canvas.getContext('2d')
+
+      let zoom = 1
+      let panX = 0
+      let panY = 0
+      let panning = false
+      let lastX = 0
+      let lastY = 0
+
+      function addLog(text) {
+        const div = document.createElement('div')
+        div.innerHTML = text
+        log.prepend(div)
+        while (log.children.length > 40) log.lastChild.remove()
+      }
+
+      function resize() {
+        const r = canvas.getBoundingClientRect()
+        canvas.width = r.width * devicePixelRatio
+        canvas.height = r.height * devicePixelRatio
+        draw()
+      }
+
+      function draw() {
+        const w = canvas.width
+        const h = canvas.height
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.clearRect(0, 0, w, h)
+        ctx.fillStyle = '#10131a'
+        ctx.fillRect(0, 0, w, h)
+
+        ctx.setTransform(zoom * devicePixelRatio, 0, 0, zoom * devicePixelRatio, panX * devicePixelRatio, panY * devicePixelRatio)
+
+        const step = 40
+        ctx.lineWidth = 1 / zoom
+        ctx.strokeStyle = '#2a3140'
+        for (let x = -800; x < 1600; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, -800); ctx.lineTo(x, 1600); ctx.stroke()
+        }
+        for (let y = -800; y < 1600; y += step) {
+          ctx.beginPath(); ctx.moveTo(-800, y); ctx.lineTo(1600, y); ctx.stroke()
+        }
+        ctx.fillStyle = '#38bdf8'
+        ctx.beginPath(); ctx.arc(200, 130, 44, 0, Math.PI * 2); ctx.fill()
+        ctx.fillStyle = '#22c55e'
+        ctx.fillRect(360, 80, 90, 90)
+        ctx.fillStyle = 'rgba(255,255,255,.75)'
+        ctx.font = `${16 / zoom}px ui-monospace, monospace`
+        ctx.fillText(`zoom ${zoom.toFixed(2)}×`, 200, 240)
+      }
+
+      // preventDefault é o que sinaliza "eu tratei este evento". A extensão
+      // detecta isso e não aplica rolagem nativa por cima — mesma convenção que
+      // um mapa usa.
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault()
+        if (e.ctrlKey) {
+          const factor = Math.exp(-e.deltaY * 0.002)
+          zoom = Math.max(0.25, Math.min(6, zoom * factor))
+          addLog(`<b>wheel+ctrl</b> Δ${e.deltaY.toFixed(0)} → zoom ${zoom.toFixed(2)}×`)
+        } else {
+          panY -= e.deltaY
+          panX -= e.deltaX
+          addLog(`<b>wheel</b> Δy ${e.deltaY.toFixed(0)} → pan`)
+        }
+        draw()
+      }, { passive: false })
+
+      canvas.addEventListener('pointerdown', (e) => {
+        panning = true
+        lastX = e.clientX
+        lastY = e.clientY
+        addLog('<b>pointerdown</b> início do pan')
+      })
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!panning) return
+        panX += e.clientX - lastX
+        panY += e.clientY - lastY
+        lastX = e.clientX
+        lastY = e.clientY
+        draw()
+      })
+
+      window.addEventListener('pointerup', () => {
+        if (panning) addLog('<b>pointerup</b> fim do pan')
+        panning = false
+      })
+
+      window.addEventListener('resize', resize)
+      resize()
+      addLog('Canvas pronto. Os eventos recebidos aparecem aqui.')
+    </script>
+  </body>
+</html>

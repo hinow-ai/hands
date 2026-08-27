@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Frame filho</title>
+<style>
+ body{margin:0;font:14px system-ui;background:#111827;color:#e5e7eb;padding:20px}
+ h3{margin:0 0 4px;font-size:15px}
+ .o{color:#9ca3af;font-size:12px;margin-bottom:14px}
+ button{display:block;width:100%;margin:8px 0;padding:14px;border:1px solid #374151;
+        background:#1f2937;color:#e5e7eb;border-radius:8px;font:600 14px system-ui;cursor:pointer}
+ button:hover{background:#374151}
+ #out{margin-top:14px;padding:10px;background:#0b1220;border-radius:8px;
+      font:12px ui-monospace,monospace;color:#38bdf8;min-height:44px}
+ #sc{height:110px;overflow-y:auto;border:1px solid #374151;border-radius:8px;padding:10px;margin-top:12px}
+</style></head><body>
+<h3>Conteúdo embutido</h3>
+<div class="o">origem: <b id="org"></b></div>
+<button id="b1">Botão dentro do iframe</button>
+<button id="b2">Segundo botão</button>
+<div id="sc"></div>
+<div id="out">aguardando comandos…</div>
+<script>
+ document.getElementById('org').textContent = location.origin;
+ const out = document.getElementById('out');
+ let n = 0;
+ document.getElementById('b1').onclick = () => out.textContent = `clique recebido no botão 1 (${++n})`;
+ document.getElementById('b2').onclick = () => out.textContent = `clique recebido no botão 2 (${++n})`;
+ const sc = document.getElementById('sc');
+ for (let i=1;i<=30;i++){const p=document.createElement('p');p.textContent='linha '+i;sc.appendChild(p)}
+</script></body></html>

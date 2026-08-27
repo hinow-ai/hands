@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>gesture-nav camera</title>
+  </head>
+  <body>
+    <!--
+      Documento invisível: existe apenas para hospedar a câmera e o modelo.
+      O vídeo precisa estar no DOM e em reprodução para que o detector receba
+      frames, mas nunca é exibido a ninguém.
+    -->
+    <video id="cam" playsinline muted autoplay></video>
+    <script type="module" src="offscreen.js"></script>
+  </body>
+</html>

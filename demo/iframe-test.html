@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Teste cross-origin</title>
+<style>
+ body{margin:0;font:15px system-ui;background:#0f1115;color:#e8eaed;padding:24px}
+ h1{font-size:20px;margin:0 0 4px}
+ p.s{color:#9aa1ac;font-size:13px;margin:0 0 18px}
+ iframe{width:420px;height:420px;border:1px solid #262b35;border-radius:12px;background:#111827}
+ #res{margin-top:16px;font:12px/1.8 ui-monospace,monospace;white-space:pre}
+</style></head><body>
+<h1>Iframe cross-origin</h1>
+<p class="s">O quadro abaixo vem de outra porta, portanto outra origem. Nenhum evento sintético daqui alcança o DOM lá dentro.</p>
+<iframe id="fr" src="http://localhost:5600/child.html"></iframe>
+<div id="res"></div>
+</body></html>
