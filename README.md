@@ -79,6 +79,12 @@ A saída é uma estratégia de duas camadas. Despachamos o evento real primeiro;
 mesmos o efeito nativo equivalente. O mesmo gesto rola uma página de notícias e dá zoom no
 Google Maps, sem que o código precise saber em qual dos dois está.
 
+**Abas que já estavam abertas.** Content scripts declarados no manifest só entram em páginas
+carregadas depois da instalação. Para que "qualquer site" seja verdade desde o primeiro instante,
+o service worker injeta o script retroativamente nas abas existentes ao instalar, e sonda a aba
+com um ping antes de ativá-la, injetando se não houver resposta. Uma marca no lado do content
+script impede que a dupla entrada crie dois cursores.
+
 **Iframes de outra origem.** O content script é injetado em todos os frames, então cada iframe
 tem a própria cópia rodando lá dentro, com acesso pleno ao seu DOM. O frame de cima detecta que
 o cursor está sobre um `<iframe>`, converte a coordenada para o sistema local daquele frame e
@@ -166,6 +172,8 @@ No popup da extensão:
 
 - Páginas internas do Chrome (`chrome://`, a Web Store) não aceitam content scripts. Nada funciona
   nelas, e nem pode.
+- PDFs no visualizador nativo e vídeo protegido por DRM não expõem o conteúdo ao DOM: o cursor
+  aparece, mas não há elemento para clicar.
 - Digitar texto não está implementado — o teclado continua necessário para campos de entrada.
 - Só a aba ativa recebe gestos, por decisão de projeto: uma câmera, uma aba.
 - O reconhecimento cai de qualidade com iluminação muito fraca ou contraluz forte.

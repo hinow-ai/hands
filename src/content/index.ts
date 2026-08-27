@@ -16,36 +16,61 @@ import { FrameAgent } from './frameAgent'
 import { isTopFrame, listenForFrameCommands } from './frames'
 import { RuntimeMessage } from '../core/wire'
 
-if (isTopFrame()) {
-  const controller = new GestureController()
+/**
+ * Marca de inicialização, contra rodar duas vezes no mesmo frame.
+ *
+ * Este arquivo chega à página por dois caminhos: a declaração no manifest, que
+ * cobre páginas carregadas a partir de agora, e a injeção programática, que
+ * alcança as abas que já estavam abertas. Numa aba em que os dois acontecem,
+ * sem esta marca haveria dois overlays, dois laços de animação e dois
+ * listeners — e cada clique sairia em dobro.
+ *
+ * A marca sobrevive entre injeções porque todas compartilham o mesmo mundo
+ * isolado da extensão dentro daquele frame.
+ */
+const FLAG = '__gestureNavLoaded'
+const scope = globalThis as typeof globalThis & { [FLAG]?: boolean }
 
-  chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
-    switch (message?.type) {
-      case 'GN_FRAME':
-        controller.onGestureFrame(message.frame)
-        break
-      case 'GN_ENABLE':
-        controller.enable()
-        break
-      case 'GN_DISABLE':
-        controller.disable()
-        break
-      case 'GN_SET_CONFIG':
-        controller.applyTuning(message.config)
-        break
-    }
-    return false
-  })
+if (!scope[FLAG]) {
+  scope[FLAG] = true
 
-  // Uma navegação com History API não recria o content script, mas troca a
-  // página inteira sob o overlay; reanexar mantém o cursor funcionando.
-  window.addEventListener('pageshow', () => {
-    if (controller.isEnabled) controller.enable()
-  })
+  if (isTopFrame()) {
+    const controller = new GestureController()
 
-  window.addEventListener('beforeunload', () => controller.disable())
-} else {
-  // Frames filhos só executam. Não há overlay nem laço de animação aqui.
-  const agent = new FrameAgent()
-  listenForFrameCommands((command) => agent.execute(command))
+    chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
+      switch (message?.type) {
+        case 'GN_FRAME':
+          controller.onGestureFrame(message.frame)
+          break
+        case 'GN_ENABLE':
+          controller.enable()
+          break
+        case 'GN_DISABLE':
+          controller.disable()
+          break
+        case 'GN_SET_CONFIG':
+          controller.applyTuning(message.config)
+          break
+        case 'GN_PING':
+          // Responder é o que distingue "estou aqui" de "esta aba não tem
+          // content script" — sem resposta, o envio rejeita e o service worker
+          // sabe que precisa injetar.
+          sendResponse({ present: true })
+          break
+      }
+      return false
+    })
+
+    // Uma navegação com History API não recria o content script, mas troca a
+    // página inteira sob o overlay; reanexar mantém o cursor funcionando.
+    window.addEventListener('pageshow', () => {
+      if (controller.isEnabled) controller.enable()
+    })
+
+    window.addEventListener('beforeunload', () => controller.disable())
+  } else {
+    // Frames filhos só executam. Não há overlay nem laço de animação aqui.
+    const agent = new FrameAgent()
+    listenForFrameCommands((command) => agent.execute(command))
+  }
 }

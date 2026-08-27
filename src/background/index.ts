@@ -103,6 +103,43 @@ function updateBadge(): void {
   chrome.action.setBadgeBackgroundColor({ color: on ? '#22c55e' : '#64748b' }).catch(() => {})
 }
 
+/**
+ * Garante que a aba tenha o content script antes de receber comandos.
+ *
+ * Uma mensagem enviada a uma aba sem content script simplesmente se perde. Em
+ * vez de confiar que a injeção declarativa já ocorreu — o que não vale para
+ * abas abertas antes da instalação —, sondamos e injetamos se necessário. A
+ * marca de inicialização do lado do content script torna a injeção extra
+ * inofensiva, então errar para o lado de injetar é seguro.
+ */
+async function ensureInjected(tabId: number): Promise<void> {
+  try {
+    const reply = await chrome.tabs.sendMessage(tabId, { type: 'GN_PING' } satisfies RuntimeMessage)
+    if (reply?.present) return
+  } catch {
+    // Envio rejeitado: não há content script nesta aba.
+  }
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content.js'],
+    })
+  } catch {
+    // Página protegida pelo navegador; nada a fazer.
+  }
+}
+
+/** Liga uma aba: injeta se preciso, ativa e envia os ajustes atuais. */
+async function activateTab(tabId: number): Promise<void> {
+  await ensureInjected(tabId)
+  const tuning = await getTuning()
+  chrome.tabs.sendMessage(tabId, { type: 'GN_ENABLE' } satisfies RuntimeMessage).catch(() => {})
+  chrome.tabs
+    .sendMessage(tabId, { type: 'GN_SET_CONFIG', config: tuning } satisfies RuntimeMessage)
+    .catch(() => {})
+}
+
 async function enable(): Promise<void> {
   if (enabled) return
   enabled = true
@@ -113,15 +150,7 @@ async function enable(): Promise<void> {
 
   chrome.runtime.sendMessage({ type: 'GN_START_CAMERA' } satisfies RuntimeMessage).catch(() => {})
 
-  const tuning = await getTuning()
-  if (activeTabId !== null) {
-    chrome.tabs
-      .sendMessage(activeTabId, { type: 'GN_ENABLE' } satisfies RuntimeMessage)
-      .catch(() => {})
-    chrome.tabs
-      .sendMessage(activeTabId, { type: 'GN_SET_CONFIG', config: tuning } satisfies RuntimeMessage)
-      .catch(() => {})
-  }
+  if (activeTabId !== null) await activateTab(activeTabId)
   broadcastState()
 }
 
@@ -235,13 +264,7 @@ async function handleTabChange(): Promise<void> {
       .catch(() => {})
   }
   if (enabled && activeTabId !== null) {
-    const tuning = await getTuning()
-    chrome.tabs
-      .sendMessage(activeTabId, { type: 'GN_ENABLE' } satisfies RuntimeMessage)
-      .catch(() => {})
-    chrome.tabs
-      .sendMessage(activeTabId, { type: 'GN_SET_CONFIG', config: tuning } satisfies RuntimeMessage)
-      .catch(() => {})
+    await activateTab(activeTabId)
   }
 }
 
@@ -252,14 +275,45 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   // Uma navegação recria o content script, que sobe desligado; se a extensão
   // está ativa, precisa ser religada na nova página.
   if (changeInfo.status === 'complete' && enabled && tabId === activeTabId) {
-    void (async () => {
-      const tuning = await getTuning()
-      chrome.tabs.sendMessage(tabId, { type: 'GN_ENABLE' } satisfies RuntimeMessage).catch(() => {})
-      chrome.tabs
-        .sendMessage(tabId, { type: 'GN_SET_CONFIG', config: tuning } satisfies RuntimeMessage)
-        .catch(() => {})
-    })()
+    void activateTab(tabId)
   }
+})
+
+/**
+ * Injeta o content script nas abas que já estavam abertas.
+ *
+ * Content scripts declarados no manifest só entram em páginas carregadas
+ * DEPOIS que a extensão foi instalada ou recarregada. Sem esta injeção
+ * retroativa, toda aba já aberta fica sem o script até um F5 manual — e o
+ * sintoma, de fora, é indistinguível de "a extensão não funciona neste site".
+ */
+async function injectIntoExistingTabs(): Promise<void> {
+  let tabs: chrome.tabs.Tab[]
+  try {
+    tabs = await chrome.tabs.query({})
+  } catch {
+    return
+  }
+
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (tab.id === undefined || isRestrictedUrl(tab.url)) return
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ['content.js'],
+        })
+      } catch {
+        // Páginas que o Chrome protege recusam a injeção mesmo passando pelo
+        // filtro de URL — por exemplo, uma aba exibindo um PDF ou um erro de
+        // rede. Não há o que fazer, e falhar uma aba não pode abortar as outras.
+      }
+    }),
+  )
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  void injectIntoExistingTabs()
 })
 
 chrome.runtime.onStartup.addListener(() => {

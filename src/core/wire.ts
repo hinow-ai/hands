@@ -47,6 +47,8 @@ export type RuntimeMessage =
   | { type: 'GN_TOGGLE' }
   | { type: 'GN_STATE'; enabled: boolean; cameraStatus: CameraStatus; error?: string }
   | { type: 'GN_QUERY_STATE' }
+  /** Sonda se o content script já está presente numa aba. */
+  | { type: 'GN_PING' }
   | { type: 'GN_CAMERA_STATUS'; status: CameraStatus; error?: string }
   | { type: 'GN_START_CAMERA' }
   | { type: 'GN_STOP_CAMERA' }
