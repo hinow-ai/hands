@@ -286,6 +286,156 @@ async function main() {
     )
   }
 
+  // ---------------------------------------------------- ponta estabilizada
+
+  {
+    // Injeta ruído lateral só na ponta do indicador e mede quanto sobra no
+    // ponto de controle. É o ruído que o modelo real produz nesse landmark.
+    const base = makeHand({ ...POSES.point })
+
+    let rawSpread = 0
+    let stableSpread = 0
+    const rawXs = []
+    const stableXs = []
+
+    for (let i = 0; i < 40; i++) {
+      const noisy = base.map((p, idx) => {
+        if (idx !== 8) return p
+        // Perturbação determinística, perpendicular ao eixo do dedo.
+        return { x: p.x + Math.sin(i * 1.7) * 0.006, y: p.y + Math.cos(i * 2.1) * 0.002, z: p.z }
+      })
+      const model = buildHandModel(noisy, null, 'right', 1)
+      rawXs.push(model.indexTip.x)
+      stableXs.push(model.stableIndexTip.x)
+    }
+
+    const spread = (xs) => Math.max(...xs) - Math.min(...xs)
+    rawSpread = spread(rawXs)
+    stableSpread = spread(stableXs)
+
+    check(
+      'projeção no eixo do dedo reduz o tremor da ponta',
+      stableSpread < rawSpread * 0.6,
+      `amplitude ${(rawSpread * 1000).toFixed(2)} -> ${(stableSpread * 1000).toFixed(2)} (milésimos de quadro)`,
+    )
+
+    // A estabilização não pode custar a capacidade de apontar: o ponto ainda
+    // precisa acompanhar o dedo quando ele realmente se move.
+    const left = buildHandModel(makeHand({ ...POSES.point, center: { x: 0.35, y: 0.5 } }), null, 'right', 1)
+    const right = buildHandModel(makeHand({ ...POSES.point, center: { x: 0.65, y: 0.5 } }), null, 'right', 1)
+    check(
+      'ponto estabilizado ainda segue o dedo',
+      Math.abs(right.stableIndexTip.x - left.stableIndexTip.x) > 0.25,
+      `deslocou ${(right.stableIndexTip.x - left.stableIndexTip.x).toFixed(3)} para 0.30 de movimento`,
+    )
+  }
+
+  // ---------------------------------------------------- ganho adaptativo
+
+  {
+    const viewport = { width: 1920, height: 1080 }
+
+    /** Move a mão de `from` a `to` em N passos e devolve o caminho do cursor. */
+    const sweep = (from, to, steps, msPerStep) => {
+      const mapper = new (mod.PointerMapper)()
+      let t = 0
+      mapper.update({ x: from, y: 0.5 }, t, viewport)
+      const start = mapper.position.x
+
+      for (let i = 1; i <= steps; i++) {
+        t += msPerStep
+        const nx = from + ((to - from) * i) / steps
+        mapper.update({ x: nx, y: 0.5 }, t, viewport)
+      }
+      // Deixa a interpolação visual alcançar o alvo.
+      for (let i = 0; i < 90; i++) mapper.render(t + i * 16)
+      return { start, end: mapper.position.x }
+    }
+
+    // Mesmo deslocamento de mão, devagar e depressa.
+    const slow = sweep(0.5, 0.56, 30, 33)
+    const fast = sweep(0.5, 0.56, 3, 33)
+
+    const slowTravel = Math.abs(slow.end - slow.start)
+    const fastTravel = Math.abs(fast.end - fast.start)
+
+    check(
+      'movimento lento percorre menos tela que o rápido',
+      slowTravel < fastTravel * 0.75,
+      `lento ${slowTravel.toFixed(0)}px, rápido ${fastTravel.toFixed(0)}px para o mesmo gesto`,
+    )
+    check(
+      'movimento lento ainda avança',
+      slowTravel > 5,
+      `${slowTravel.toFixed(0)}px — precisão não pode virar paralisia`,
+    )
+
+    // Ruído puro com a mão parada: é o que determina se dá para acertar um
+    // link pequeno. Compara o ganho de precisão contra ganho fixo de 1.
+    const jitterOf = (precisionGain) => {
+      const mapper = new (mod.PointerMapper)({ precisionGain })
+      let t = 0
+      mapper.update({ x: 0.5, y: 0.5 }, t, viewport)
+      const xs = []
+      for (let i = 0; i < 80; i++) {
+        t += 33
+        const nx = 0.5 + Math.sin(i * 2.3) * 0.0035
+        mapper.update({ x: nx, y: 0.5 }, t, viewport)
+        mapper.render(t)
+        if (i > 25) xs.push(mapper.position.x)
+      }
+      return Math.max(...xs) - Math.min(...xs)
+    }
+
+    const withPrecision = jitterOf(0.35)
+    const withoutPrecision = jitterOf(1)
+    check(
+      'ganho de precisão reduz o tremor na tela',
+      withPrecision < withoutPrecision * 0.7,
+      `${withoutPrecision.toFixed(1)}px -> ${withPrecision.toFixed(1)}px de oscilação`,
+    )
+  }
+
+  // ---------------------------------------------------- clutch
+
+  {
+    const viewport = { width: 1920, height: 1080 }
+    const mapper = new (mod.PointerMapper)()
+    let t = 0
+
+    mapper.update({ x: 0.5, y: 0.5 }, t, viewport)
+    for (let i = 0; i < 40; i++) mapper.render(t + i * 16)
+    const before = mapper.position.x
+
+    // Punho fechado: a mão atravessa o quadro e o cursor não pode se mover.
+    for (let i = 1; i <= 20; i++) {
+      t += 33
+      mapper.update({ x: 0.5 - i * 0.01, y: 0.5 }, t, viewport, true)
+    }
+    for (let i = 0; i < 40; i++) mapper.render(t + i * 16)
+    const during = mapper.position.x
+
+    check(
+      'clutch trava o cursor enquanto a mão se move',
+      Math.abs(during - before) < 2,
+      `moveu ${Math.abs(during - before).toFixed(1)}px com o punho fechado`,
+    )
+
+    // Ao soltar, o movimento retoma do ponto onde parou — sem salto.
+    t += 33
+    mapper.update({ x: 0.3, y: 0.5 }, t, viewport, false)
+    t += 33
+    mapper.update({ x: 0.305, y: 0.5 }, t, viewport, false)
+    for (let i = 0; i < 40; i++) mapper.render(t + i * 16)
+    const after = mapper.position.x
+
+    check(
+      'ao soltar o clutch o cursor não salta',
+      Math.abs(after - during) < 60,
+      `saltou ${Math.abs(after - during).toFixed(0)}px na retomada`,
+    )
+  }
+
   // ---------------------------------------------------- limpeza de estado
 
   {

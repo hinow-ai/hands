@@ -23,6 +23,7 @@ import { PointerMapper, ScrollMomentum } from '../core/pointer'
 import { clamp } from '../core/filters'
 import { Overlay } from './overlay'
 import { ImageViewer } from './imageZoom'
+import { Magnet } from './magnet'
 import {
   HoverTracker,
   deepElementFromPoint,
@@ -49,6 +50,17 @@ const HISTORY_COOLDOWN_MS = 1200
 /** Tempo de punho mantido que fecha o visualizador de imagem. */
 const FIST_CLOSE_MS = 650
 
+/**
+ * Força de pinça que arma o clique.
+ *
+ * Bem antes de a pinça fechar de fato já dá para saber que ela está fechando.
+ * Nesse instante congelamos a posição, e é ela que o clique usa: o ato de unir
+ * os dedos desloca a mão inteira alguns pixels, então mirar e clicar na mesma
+ * coordenada seria impossível. É o defeito clássico de qualquer interface por
+ * gesto ou olhar — o gesto de confirmar move o que ele deveria confirmar.
+ */
+const PINCH_ARM_STRENGTH = 0.32
+
 /** Elementos que valem a pena realçar como alvo clicável. */
 const INTERACTIVE_SELECTOR =
   'a[href], button, input, select, textarea, summary, label, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [onclick], [tabindex]:not([tabindex="-1"])'
@@ -65,6 +77,16 @@ export class GestureController {
   private pointer = new PointerMapper()
   private hover = new HoverTracker()
   private momentum = new ScrollMomentum()
+  private magnet = new Magnet()
+
+  /** Posição efetiva do cursor: já suavizada, interpolada e magnetizada. */
+  private cursorX = 0
+  private cursorY = 0
+  private lastLoopTime = 0
+
+  /** Posição congelada quando a pinça começou a fechar; usada pelo clique. */
+  private armedX: number | null = null
+  private armedY: number | null = null
 
   private mode: Mode = 'idle'
   private enabled = false
@@ -141,6 +163,21 @@ export class GestureController {
       clutch,
     )
 
+    // Arma o clique assim que os dedos começam a se aproximar, muito antes de
+    // a pinça ser reconhecida. A posição de agora é a que o usuário está
+    // mirando; a de daqui a três frames já terá sido contaminada pelo próprio
+    // movimento de fechar a mão.
+    const strength = primary?.pinchStrength ?? 0
+    if (strength >= PINCH_ARM_STRENGTH) {
+      if (this.armedX === null) {
+        this.armedX = this.cursorX
+        this.armedY = this.cursorY
+      }
+    } else {
+      this.armedX = null
+      this.armedY = null
+    }
+
     // A saída de um gesto é tão significativa quanto a entrada: é ao ABRIR a
     // pinça que o clique acontece. Detectar a transição aqui, e não no laço
     // visual, garante que ela seja processada uma única vez.
@@ -152,10 +189,13 @@ export class GestureController {
   }
 
   private onGestureTransition(previous: GestureName | 'none', next: GestureName | 'none'): void {
-    const { x, y } = this.pointer.position
+    const x = this.cursorX
+    const y = this.cursorY
 
     if (previous === 'pinch' && next !== 'pinch') {
-      this.resolvePinchRelease(x, y)
+      // O clique vai para onde o cursor estava quando a pinça começou a
+      // fechar, não para onde a mão o levou durante o fechamento.
+      this.resolvePinchRelease(this.armedX ?? x, this.armedY ?? y)
     }
     if (previous === 'two' && next !== 'two') {
       this.endScroll()
@@ -184,10 +224,22 @@ export class GestureController {
     this.rafHandle = requestAnimationFrame(this.loop)
 
     const now = performance.now()
+    let dt = this.lastLoopTime ? (now - this.lastLoopTime) / 1000 : 1 / 60
+    this.lastLoopTime = now
+    if (!(dt > 0) || dt > 0.25) dt = 1 / 60
+
     const state = this.pointer.render(now)
     const frame = this.lastFrame
 
-    this.overlay.moveCursor(state.x, state.y)
+    // Durante um arraste o magnetismo é desligado: arrastar exige a posição
+    // que a mão realmente pede — um mapa sendo deslocado não pode ser puxado
+    // para o botão mais próximo no meio do movimento.
+    this.magnet.setEnabled(this.mode !== 'drag' && this.mode !== 'zoom' && !this.viewer.isOpen)
+    const adjusted = this.magnet.apply(state.x, state.y, dt)
+    this.cursorX = adjusted.x
+    this.cursorY = adjusted.y
+
+    this.overlay.moveCursor(this.cursorX, this.cursorY)
     this.applyMomentum(now)
 
     if (!frame || frame.hands.length === 0) {
@@ -204,7 +256,7 @@ export class GestureController {
     // Zoom com as duas mãos tem prioridade: é um gesto deliberado e não deve
     // ser interpretado como duas pinças independentes.
     if (frame.twoHandPinch && frame.twoHandSpread !== null) {
-      this.handleTwoHandZoom(frame.twoHandSpread, state.x, state.y)
+      this.handleTwoHandZoom(frame.twoHandSpread, this.cursorX, this.cursorY)
       this.updateHud(primary.gesture, 'Zoom')
       return
     }
@@ -212,10 +264,10 @@ export class GestureController {
 
     switch (primary.gesture) {
       case 'pinch':
-        this.handlePinch(state.x, state.y)
+        this.handlePinch(this.cursorX, this.cursorY)
         break
       case 'two':
-        this.handleScroll(state.x, state.y, primary.pointer.y, now)
+        this.handleScroll(this.cursorX, this.cursorY, primary.pointer.y, now)
         break
       case 'fist':
         this.handleFist(now)
@@ -229,7 +281,7 @@ export class GestureController {
       case 'point':
       case 'open':
       default:
-        this.handleNeutral(state.x, state.y)
+        this.handleNeutral(this.cursorX, this.cursorY)
         break
     }
 
@@ -239,8 +291,11 @@ export class GestureController {
   // ------------------------------------------------------------ estados
 
   private handleNoHands(): void {
-    if (this.mode === 'drag') this.endDrag(this.pointer.position.x, this.pointer.position.y)
+    if (this.mode === 'drag') this.endDrag(this.cursorX, this.cursorY)
     if (this.mode === 'scroll') this.endScroll()
+    this.magnet.reset()
+    this.armedX = null
+    this.armedY = null
     this.mode = 'idle'
     this.overlay.setCursorMode('hidden')
     this.overlay.showHighlight(null)
@@ -417,8 +472,7 @@ export class GestureController {
     const delta = this.momentum.step(now)
     if (delta === 0) return
 
-    const { x, y } = this.pointer.position
-    this.dispatchScroll(x, y, 0, delta)
+    this.dispatchScroll(this.cursorX, this.cursorY, 0, delta)
   }
 
   private dispatchScroll(x: number, y: number, dx: number, dy: number): boolean {
@@ -432,7 +486,7 @@ export class GestureController {
   }
 
   private handleFist(now: number): void {
-    if (this.mode === 'drag') this.endDrag(this.pointer.position.x, this.pointer.position.y)
+    if (this.mode === 'drag') this.endDrag(this.cursorX, this.cursorY)
     if (this.mode === 'scroll') this.endScroll()
 
     if (!this.fistSince) this.fistSince = now
@@ -571,8 +625,7 @@ export class GestureController {
   }
 
   private releaseEverything(): void {
-    const { x, y } = this.pointer.position
-    if (this.mode === 'drag') synthDragEnd(this.dragTarget, x, y, true)
+    if (this.mode === 'drag') synthDragEnd(this.dragTarget, this.cursorX, this.cursorY, true)
     this.momentum.stop()
     this.dragTarget = null
     this.dragFrame = null

@@ -118,6 +118,44 @@ instantâneo.
 
 ---
 
+## O que dá a precisão
+
+Filtrar remove o tremor, não a amplificação. A área ativa amplia o quadro da câmera em cerca de
+cinco vezes até a tela, então cada pixel de erro do rastreamento vira cinco na tela — e nenhum
+filtro desfaz isso. Quatro mecanismos atacam a amplificação em si.
+
+**Ganho adaptativo.** Movimento lento move o cursor a ~1/3 da distância da mão, que é de onde vem
+a mira fina; movimento rápido volta ao mapeamento absoluto. A correspondência com a posição
+absoluta é restaurada durante os movimentos amplos, quando a atenção não está na mira.
+
+**Ponta do dedo estabilizada.** A ponta é o landmark mais ruidoso que o modelo produz — fica no
+fim da cadeia cinemática e acumula o erro de todas as juntas. Como um dedo esticado é
+aproximadamente reto, projetamos a ponta sobre o eixo definido por duas juntas internas, mais
+estáveis. O ruído perpendicular, que é quase todo o tremor lateral, desaparece.
+
+**Clique armado antes de fechar.** Unir os dedos desloca a mão inteira, então mirar e clicar na
+mesma coordenada seria impossível. A posição é congelada quando a pinça *começa* a fechar, e é
+ela que o clique usa.
+
+**Magnetismo.** Dentro de ~26 px, o cursor é levado para dentro do alvo clicável. Aplicado apenas
+à posição visível — o alvo interno do ponteiro continua livre, então sair é tão fácil quanto
+entrar. Desliga sobre canvas, mapas e durante arrastes, onde a posição livre é o conteúdo.
+
+Medido em `npm run measure`, para tela 1920×1080 e tremor de mão de ~2 px no quadro:
+
+| | antes | depois |
+|---|---|---|
+| Oscilação do cursor parado | 14,8 px | **2,4 px** |
+| Menor alvo confortável | ~30 px | **~5 px** |
+| Ruído da ponta do dedo | 46,9 px | **11,7 px** (−75%) |
+
+E em navegador real, sobre alvos a até 26 px do cursor: **0% de acerto sem magnetismo, 100% com**.
+
+Os números do medidor usam um modelo de ruído; o rastreamento real traz outros erros, então
+espere um resultado melhor que antes, não exatamente estes valores.
+
+---
+
 ## Detecção invariante
 
 O detector mede **ângulos de articulação** — invariantes a rotação e escala — e normaliza toda
@@ -135,8 +173,9 @@ O caso mais grave da abordagem ingênua: com a mão a 180°, um punho é lido co
 gestos de ações opostas.
 
 ```bash
-npm test          # 34 asserções sobre o motor
+npm test              # 41 asserções sobre o motor
 npm run test:legacy   # a comparação acima, reproduzível
+npm run measure       # relatório de precisão em pixels
 ```
 
 ---

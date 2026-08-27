@@ -173,7 +173,7 @@ export class GestureRecognizer {
       // Ao pinçar, o ponto de controle passa a ser o meio da garra, não a ponta
       // do indicador: o indicador se desloca ao fechar a pinça, e usar a ponta
       // faria o cursor pular no exato instante do clique.
-      const control = pinching ? model.pinchPoint : model.indexTip
+      const control = pinching ? model.pinchPoint : model.stableIndexTip
 
       hands.push({
         hand: model.handedness,

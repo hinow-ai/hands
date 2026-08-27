@@ -1,26 +1,31 @@
 /**
  * Mapeamento da mão para a tela.
  *
- * Três decisões definem a sensação de controle aqui:
+ * Quatro decisões definem a sensação de controle aqui:
  *
- * 1. Mapeamento ABSOLUTO, não relativo. "Mão à direita = cursor à direita" é
- *    imediatamente compreensível; um mapeamento relativo tipo mouse acumula
- *    drift e obriga a pessoa a caçar o cursor na tela.
- *
- * 2. ÁREA ATIVA reduzida. Só a região central do quadro mapeia para a tela
+ * 1. ÁREA ATIVA reduzida. Só a região central do quadro mapeia para a tela
  *    inteira, então os cantos da tela ficam alcançáveis sem esticar o braço
  *    até a borda do campo de visão — onde o rastreamento degrada.
  *
- * 3. Suavização adaptativa. Com a mão quase parada, o One Euro corta forte e o
- *    cursor fica cravado — é o que permite acertar um link pequeno. Num
- *    movimento amplo ele quase não filtra, e o cursor acompanha sem arrasto.
+ * 2. Suavização adaptativa. Com a mão quase parada, o One Euro corta forte e o
+ *    cursor fica cravado; num movimento amplo ele quase não filtra, e o cursor
+ *    acompanha sem arrasto.
  *
- * O cursor ainda é interpolado a cada frame de animação, enquanto o modelo
- * entrega só ~30 amostras por segundo. Sem isso o movimento fica visivelmente
- * escalonado num monitor de 60Hz.
+ * 3. GANHO adaptativo. A área ativa amplia o quadro em cerca de cinco vezes até
+ *    a tela, e nenhum filtro desfaz isso: filtrar remove o tremor, não a
+ *    amplificação. Movimento lento recebe ganho reduzido — a mão anda mais que
+ *    o cursor — e é daí que vem a precisão de mira. A correspondência com a
+ *    posição absoluta é restaurada durante movimentos rápidos, quando a atenção
+ *    não está na mira e o reposicionamento passa despercebido. Sem essa
+ *    reancoragem, o esquema viraria um mapeamento relativo, com o drift que ele
+ *    traz; sem o ganho reduzido, seria absoluto puro, sem precisão fina.
+ *
+ * 4. Interpolação a cada frame de animação, enquanto o modelo entrega só ~30
+ *    amostras por segundo. Sem isso o movimento fica visivelmente escalonado
+ *    num monitor de 60Hz.
  */
 
-import { OneEuroFilter, clamp, damp } from './filters'
+import { OneEuroFilter, clamp, damp, mapRange } from './filters'
 
 export interface PointerConfig {
   /** Fração do quadro usada como área ativa, por eixo. 0.6 = 60% central. */
@@ -34,6 +39,16 @@ export interface PointerConfig {
   beta: number
   /** Velocidade da interpolação visual. Maior = mais direto, menos macio. */
   followLambda: number
+  /**
+   * Ganho aplicado no movimento lento, como fração do mapeamento absoluto.
+   * 0.35 significa que mover a mão devagar move o cursor a ~1/3 da distância —
+   * o que multiplica a precisão por 3 na mira fina.
+   */
+  precisionGain: number
+  /** Abaixo desta velocidade (px/s) vale o ganho de precisão integral. */
+  slowSpeed: number
+  /** Acima desta velocidade (px/s) o ganho volta a ser o absoluto. */
+  fastSpeed: number
 }
 
 export const DEFAULT_POINTER_CONFIG: PointerConfig = {
@@ -43,6 +58,9 @@ export const DEFAULT_POINTER_CONFIG: PointerConfig = {
   minCutoff: 0.8,
   beta: 0.02,
   followLambda: 28,
+  precisionGain: 0.35,
+  slowSpeed: 70,
+  fastSpeed: 850,
 }
 
 export interface PointerState {
@@ -71,18 +89,10 @@ export class PointerMapper {
   private speed = 0
   private hasTarget = false
 
-  /**
-   * Deslocamento acumulado pelo clutch.
-   *
-   * Ao fechar o punho e reposicionar o braço, a mão muda de lugar mas o cursor
-   * não pode se mexer. Ao reabrir, a diferença entre onde a mão está e onde o
-   * cursor ficou é absorvida aqui — exatamente como levantar o mouse da mesa.
-   */
-  private offsetX = 0
-  private offsetY = 0
+  /** Última amostra absoluta, base para calcular o deslocamento do frame. */
+  private lastRawX = 0
+  private lastRawY = 0
   private clutching = false
-  private clutchAnchorX = 0
-  private clutchAnchorY = 0
 
   constructor(config: Partial<PointerConfig> = {}) {
     this.config = { ...DEFAULT_POINTER_CONFIG, ...config }
@@ -117,6 +127,18 @@ export class PointerMapper {
   /**
    * Alimenta uma amostra do rastreamento. Chamar na taxa do modelo (~30Hz).
    * `clutch` congela o cursor e permite reposicionar a mão.
+   *
+   * O cursor não segue a posição absoluta diretamente: segue o DESLOCAMENTO da
+   * mão, multiplicado por um ganho que depende da velocidade. Movimento lento
+   * recebe ganho reduzido, e é isso que dá precisão fina — a área ativa amplia
+   * o quadro em cerca de cinco vezes até a tela, então sem esse freio cada
+   * pixel de ruído do rastreamento viraria cinco na tela.
+   *
+   * Reduzir o ganho, porém, faz o cursor ficar para trás da posição absoluta.
+   * A correspondência é restaurada durante os movimentos rápidos, quando a
+   * atenção não está na mira: o alvo é puxado de volta para a posição absoluta
+   * com uma taxa que cresce com a velocidade. O resultado é preciso de perto e
+   * previsível de longe, sem o drift de um mapeamento puramente relativo.
    */
   update(
     normalized: { x: number; y: number } | null,
@@ -136,32 +158,52 @@ export class PointerMapper {
     const sx = this.fx.filter(raw.x, timestamp)
     const sy = this.fy.filter(raw.y, timestamp)
 
-    if (clutch) {
-      if (!this.clutching) {
-        this.clutching = true
-        this.clutchAnchorX = sx
-        this.clutchAnchorY = sy
-      }
-      // Durante o clutch o alvo não se move: só acumulamos o quanto a mão andou
-      // para descontar quando o gesto terminar.
-      this.offsetX = this.clutchAnchorX - sx
-      this.offsetY = this.clutchAnchorY - sy
+    // Primeira amostra: cursor nasce onde a mão está, sem deslocamento.
+    if (!this.hasTarget) {
+      this.targetX = sx
+      this.targetY = sy
+      this.renderX = sx
+      this.renderY = sy
+      this.lastRawX = sx
+      this.lastRawY = sy
+      this.hasTarget = true
       return
     }
 
-    if (this.clutching) {
-      this.clutching = false
-      // Congela o deslocamento acumulado para que a retomada seja contínua.
+    const dx = sx - this.lastRawX
+    const dy = sy - this.lastRawY
+    this.lastRawX = sx
+    this.lastRawY = sy
+
+    // Durante o clutch a mão anda mas o cursor não. Como trabalhamos com
+    // deslocamentos, basta descartar este frame: ao soltar, o movimento segue
+    // do ponto onde o cursor parou, sem salto algum.
+    if (clutch) {
+      this.clutching = true
+      return
+    }
+    this.clutching = false
+
+    const dt = 1 / 30
+    const speed = Math.sqrt(dx * dx + dy * dy) / dt
+
+    const { precisionGain, slowSpeed, fastSpeed } = this.config
+    const gain = mapRange(speed, slowSpeed, fastSpeed, precisionGain, 1)
+
+    this.targetX += dx * gain
+    this.targetY += dy * gain
+
+    // Reancoragem: só atua em movimento amplo, onde um reposicionamento suave
+    // passa despercebido. Em movimento lento a taxa é zero, senão o puxão
+    // desfaria a precisão que o ganho reduzido acabou de conquistar.
+    const reanchor = mapRange(speed, fastSpeed, fastSpeed * 2.5, 0, 4)
+    if (reanchor > 0) {
+      this.targetX = damp(this.targetX, sx, reanchor, dt)
+      this.targetY = damp(this.targetY, sy, reanchor, dt)
     }
 
-    this.targetX = clamp(sx + this.offsetX, 0, viewport.width)
-    this.targetY = clamp(sy + this.offsetY, 0, viewport.height)
-
-    if (!this.hasTarget) {
-      this.renderX = this.targetX
-      this.renderY = this.targetY
-      this.hasTarget = true
-    }
+    this.targetX = clamp(this.targetX, 0, viewport.width)
+    this.targetY = clamp(this.targetY, 0, viewport.height)
   }
 
   /**
@@ -202,13 +244,23 @@ export class PointerMapper {
     return this.speed < threshold
   }
 
+  /**
+   * Reposiciona o cursor sem passar pela suavização.
+   *
+   * Usado pelo magnetismo, que precisa deslocar o cursor por conta própria: se
+   * o ajuste fosse aplicado só na posição renderizada, o alvo continuaria no
+   * lugar antigo e puxaria o cursor de volta no frame seguinte.
+   */
+  nudge(x: number, y: number): void {
+    this.targetX = x
+    this.targetY = y
+  }
+
   reset(): void {
     this.fx.reset()
     this.fy.reset()
     this.hasTarget = false
     this.clutching = false
-    this.offsetX = 0
-    this.offsetY = 0
   }
 }
 

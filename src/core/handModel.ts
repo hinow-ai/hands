@@ -135,6 +135,8 @@ export interface HandModel {
   pinchPoint: Vec3
   /** Ponta do indicador, coordenadas de imagem. */
   indexTip: Vec3
+  /** Ponta do indicador com o ruído lateral removido. Ver `stabilizeTip`. */
+  stableIndexTip: Vec3
   /** Profundidade relativa: cresce quando a mão se aproxima da câmera. */
   depth: number
 }
@@ -177,6 +179,47 @@ function computeFinger(lm: Vec3[], finger: FingerName): FingerState {
     angle,
     extended: curl < 0.35,
     folded: curl > 0.6,
+  }
+}
+
+/**
+ * Remove o ruído lateral da ponta do dedo projetando-a no eixo do próprio dedo.
+ *
+ * A ponta é o landmark mais ruidoso que o modelo produz: fica no fim da cadeia
+ * cinemática e acumula o erro de todas as juntas antes dela. Como ela também é
+ * o ponto de controle do cursor, esse erro é amplificado direto na tela.
+ *
+ * Um dedo esticado é aproximadamente reto, e essa restrição anatômica é
+ * informação que podemos usar. Definimos o eixo por duas juntas internas — mais
+ * estáveis, e escolhidas sem envolver a ponta — e projetamos a ponta sobre ele.
+ * O deslocamento ao longo do dedo é preservado, que é o que dá a sensação de
+ * apontar; o desvio perpendicular, que é quase todo ruído, desaparece.
+ *
+ * Só vale com o dedo esticado: dobrado, o eixo das juntas internas não aponta
+ * para onde a ponta está, e a projeção pioraria a leitura.
+ */
+function stabilizeTip(lm: Vec3[], indexCurl: number): Vec3 {
+  const tip = lm[LM.INDEX_TIP]
+  if (indexCurl > 0.35) return tip
+
+  const mcp = lm[LM.INDEX_MCP]
+  const dip = lm[LM.INDEX_DIP]
+
+  const axis = sub(dip, mcp)
+  const len = length(axis)
+  if (len < 1e-6) return tip
+
+  const dir = scale(axis, 1 / len)
+  const along = dot(sub(tip, mcp), dir)
+  const projected = add(mcp, scale(dir, along))
+
+  // Mistura em vez de substituir: a projeção pura descarta qualquer desvio
+  // real da ponta, e o dedo não é perfeitamente reto. 75% remove a maior parte
+  // do tremor sem tornar o apontamento rígido demais.
+  return {
+    x: tip.x * 0.25 + projected.x * 0.75,
+    y: tip.y * 0.25 + projected.y * 0.75,
+    z: tip.z * 0.25 + projected.z * 0.75,
   }
 }
 
@@ -242,6 +285,7 @@ export function buildHandModel(
     pinchDistance,
     pinchPoint,
     indexTip,
+    stableIndexTip: stabilizeTip(landmarks, fingers.index.curl),
     depth,
   }
 }

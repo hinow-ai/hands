@@ -11,7 +11,8 @@
     "fetch:model": "node scripts/fetch-model.mjs",
     "test": "node tests/run.mjs",
     "test:legacy": "node tests/compare-legacy.mjs",
-    "demo": "node scripts/serve-demo.mjs"
+    "demo": "node scripts/serve-demo.mjs",
+    "measure": "node tests/measure.mjs"
   },
   "keywords": [
     "gesture",
