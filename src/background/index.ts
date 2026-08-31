@@ -14,6 +14,7 @@
 import { CameraStatus, DEFAULT_TUNING, RuntimeMessage, TuningConfig } from '../core/wire'
 
 const OFFSCREEN_PATH = 'offscreen.html'
+const PERMISSION_PATH = 'permission.html'
 
 let enabled = false
 let cameraStatus: CameraStatus = 'off'
@@ -76,6 +77,37 @@ async function closeOffscreen(): Promise<void> {
   if (await hasOffscreen()) {
     await chrome.offscreen.closeDocument().catch(() => {})
   }
+}
+
+// ------------------------------------------------------------ permissão
+
+/**
+ * Abre a aba que pede acesso à câmera.
+ *
+ * O documento offscreen não tem interface, e o Chrome não mostra a caixa de
+ * permissão para um contexto que não pode exibi-la — de lá, `getUserMedia`
+ * volta negado sem nunca perguntar nada. A permissão é gravada por origem, então
+ * pedi-la numa página visível da extensão resolve para todos os sites de uma vez.
+ *
+ * Reaproveitamos uma aba já aberta: sem isso, cada tentativa de ativar com a
+ * câmera bloqueada empilharia mais uma.
+ */
+async function openPermissionTab(): Promise<void> {
+  const url = chrome.runtime.getURL(PERMISSION_PATH)
+  try {
+    const [existing] = await chrome.tabs.query({ url })
+    if (existing?.id !== undefined) {
+      await chrome.tabs.update(existing.id, { active: true })
+      if (existing.windowId !== undefined) {
+        await chrome.windows.update(existing.windowId, { focused: true }).catch(() => {})
+      }
+      return
+    }
+  } catch {
+    // A consulta pode falhar sem a permissão de tabs para a própria origem;
+    // criar uma aba nova é a saída boa o bastante.
+  }
+  await chrome.tabs.create({ url }).catch(() => {})
 }
 
 // ------------------------------------------------------------ estado
@@ -204,7 +236,36 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
         enabled = false
         void closeOffscreen()
       }
+      // Negado quase sempre significa que a origem da extensão nunca recebeu a
+      // permissão — o offscreen não consegue pedi-la. A aba de concessão é o
+      // único caminho, então abri-la é a resposta útil, não uma mensagem de erro.
+      if (message.status === 'denied') void openPermissionTab()
       broadcastState()
+      return false
+    }
+
+    case 'GN_OFFSCREEN_READY': {
+      // Chega depois de um `enable()` que já mandou iniciar cedo demais, e
+      // também quando o documento é recriado por conta própria. Reenviar o
+      // comando é inofensivo: iniciar duas vezes só reafirma o status.
+      if (enabled) {
+        chrome.runtime
+          .sendMessage({ type: 'GN_START_CAMERA' } satisfies RuntimeMessage)
+          .catch(() => {})
+      }
+      return false
+    }
+
+    case 'GN_REQUEST_PERMISSION': {
+      void openPermissionTab()
+      return false
+    }
+
+    case 'GN_PERMISSION_GRANTED': {
+      // A origem foi liberada; a ativação que falhou agora tem como completar.
+      cameraStatus = 'off'
+      cameraError = undefined
+      void enable()
       return false
     }
 

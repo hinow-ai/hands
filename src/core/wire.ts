@@ -19,6 +19,17 @@ export interface HandSnapshot {
   pointer: { x: number; y: number }
   depth: number
   score: number
+  /** Para onde o indicador aponta, quando aponta claramente para cima ou baixo. */
+  pointDirection: 'up' | 'down' | null
+  /**
+   * As cinco pontas de dedo — polegar, indicador, médio, anelar, mínimo — em
+   * coordenadas normalizadas do quadro, já espelhadas.
+   *
+   * São dez números por mão, não os cento e trinta que mandar os 21 landmarks
+   * custaria: o suficiente para desenhar o que está sendo rastreado, sem o peso
+   * que motivou deixar o esqueleto inteiro de fora.
+   */
+  tips: { x: number; y: number }[]
 }
 
 export interface FrameSnapshot {
@@ -53,6 +64,12 @@ export type RuntimeMessage =
   | { type: 'GN_START_CAMERA' }
   | { type: 'GN_STOP_CAMERA' }
   | { type: 'GN_SET_CONFIG'; config: Partial<TuningConfig> }
+  /** Pede a abertura da aba que concede acesso à câmera (ver src/permission). */
+  | { type: 'GN_REQUEST_PERMISSION' }
+  /** A aba de permissão conseguiu abrir a câmera: a origem está liberada. */
+  | { type: 'GN_PERMISSION_GRANTED' }
+  /** O documento offscreen subiu e já escuta comandos. */
+  | { type: 'GN_OFFSCREEN_READY' }
 
 export type CameraStatus = 'off' | 'starting' | 'running' | 'denied' | 'error'
 
@@ -69,6 +86,10 @@ export interface TuningConfig {
   scrollGain: number
   /** Mostrar o painel de estado na página. */
   showHud: boolean
+  /** Mostrar o guia de gestos nos cantos inferiores, um painel por mão. */
+  showGuide: boolean
+  /** Desenhar as pontas dos dedos das duas mãos, uma cor por dedo. */
+  showTips: boolean
 }
 
 export const DEFAULT_TUNING: TuningConfig = {
@@ -78,4 +99,6 @@ export const DEFAULT_TUNING: TuningConfig = {
   beta: 0.02,
   scrollGain: 2.6,
   showHud: true,
+  showGuide: true,
+  showTips: true,
 }

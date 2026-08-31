@@ -1,7 +1,8 @@
 {
-  "name": "gesture-nav",
+  "name": "hands",
   "version": "0.1.0",
-  "description": "Controle total de navegação web por gestos de mão via webcam — extensão Chrome MV3",
+  "description": "Hands — controle total de navegação web por gestos de mão via webcam, extensão Chrome MV3",
+  "homepage": "https://hands.hinow.ai",
   "private": true,
   "type": "module",
   "scripts": {

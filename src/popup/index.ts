@@ -20,6 +20,10 @@ const smoothVal = $<HTMLElement>('smoothVal')
 const scrollInput = $<HTMLInputElement>('scroll')
 const scrollVal = $<HTMLElement>('scrollVal')
 const hudInput = $<HTMLInputElement>('hud')
+const guideInput = $<HTMLInputElement>('guide')
+const tipsInput = $<HTMLInputElement>('tips')
+const grantBox = $<HTMLDivElement>('grantBox')
+const grantBtn = $<HTMLButtonElement>('grant')
 
 const STATUS_TEXT: Record<CameraStatus, string> = {
   off: 'Desligado',
@@ -36,7 +40,16 @@ function paintState(enabled: boolean, status: CameraStatus, error?: string): voi
   statusEl.textContent = error ?? STATUS_TEXT[status] ?? 'Desligado'
   statusEl.classList.toggle('on', status === 'running')
   statusEl.classList.toggle('err', status === 'denied' || status === 'error')
+
+  // O caminho de saída da câmera negada é conceder a permissão numa aba visível;
+  // oferecê-lo aqui evita que o estado vire um beco sem saída.
+  grantBox.hidden = status !== 'denied'
 }
+
+grantBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ type: 'GN_REQUEST_PERMISSION' } satisfies RuntimeMessage)
+  window.close()
+})
 
 function paintTuning(t: TuningConfig): void {
   areaInput.value = String(Math.round(t.activeWidth * 100))
@@ -51,6 +64,8 @@ function paintTuning(t: TuningConfig): void {
   scrollVal.textContent = `${t.scrollGain.toFixed(1)}×`
 
   hudInput.checked = t.showHud
+  guideInput.checked = t.showGuide
+  tipsInput.checked = t.showTips
 }
 
 function pushConfig(config: Partial<TuningConfig>): void {
@@ -83,6 +98,14 @@ scrollInput.addEventListener('input', () => {
 
 hudInput.addEventListener('change', () => {
   pushConfig({ showHud: hudInput.checked })
+})
+
+guideInput.addEventListener('change', () => {
+  pushConfig({ showGuide: guideInput.checked })
+})
+
+tipsInput.addEventListener('change', () => {
+  pushConfig({ showTips: tipsInput.checked })
 })
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {

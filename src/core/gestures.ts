@@ -50,6 +50,14 @@ export interface HandGesture {
   pointer: { x: number; y: number }
   depth: number
   score: number
+  /**
+   * Para onde o indicador aponta, quando aponta claramente para cima ou para
+   * baixo. Fica fora de `gesture` de propósito: o gesto é invariante a rotação
+   * — apontar é apontar em qualquer ângulo — e a direção é justamente o que
+   * depende do ângulo. Misturar os dois faria o reconhecimento de "apontar"
+   * deixar de ser invariante.
+   */
+  pointDirection: 'up' | 'down' | null
   model: HandModel
 }
 
@@ -71,18 +79,49 @@ export interface GestureFrame {
 class HandState {
   pinch: Hysteresis
   stable: StableValue<GestureName>
+  /** A direção passa pela mesma confirmação do gesto — ver `pointDirection`. */
+  direction: StableValue<'up' | 'down' | 'none'>
 
   constructor() {
     this.pinch = new Hysteresis(PINCH_ON, PINCH_OFF)
     // 3 frames a ~30fps = ~100ms. Rápido o bastante para parecer instantâneo,
     // lento o bastante para descartar um frame espúrio do modelo.
     this.stable = new StableValue<GestureName>(3)
+    this.direction = new StableValue<'up' | 'down' | 'none'>(3)
   }
 
   reset(): void {
     this.pinch.reset()
     this.stable.reset()
+    this.direction.reset()
   }
+}
+
+/**
+ * Para onde o indicador aponta.
+ *
+ * Mede o eixo da junta da base à ponta, e não a inclinação da mão inteira: é o
+ * dedo que aponta, e o pulso pode estar em qualquer ângulo. Só responde quando
+ * o componente vertical domina o horizontal com folga — sem essa exigência, um
+ * dedo apontando de lado oscila entre cima e baixo a cada frame.
+ *
+ * O limiar de comprimento usa o tamanho da palma como unidade, então vale igual
+ * com a mão perto ou longe da câmera. Um dedo apontado para a própria câmera se
+ * projeta curto na imagem, e é exatamente esse caso que precisa ser recusado.
+ */
+function pointingDirection(h: HandModel): 'up' | 'down' | null {
+  const base = h.landmarks[5]
+  const tip = h.landmarks[8]
+  if (!base || !tip) return null
+
+  const dx = tip.x - base.x
+  const dy = tip.y - base.y
+
+  if (Math.abs(dy) <= Math.abs(dx) * 1.1) return null
+  if (Math.abs(dy) < h.palmSize * 0.3) return null
+
+  // y cresce para baixo na imagem: ponta acima da junta é apontar para cima.
+  return dy < 0 ? 'up' : 'down'
 }
 
 export class GestureRecognizer {
@@ -175,6 +214,9 @@ export class GestureRecognizer {
       // faria o cursor pular no exato instante do clique.
       const control = pinching ? model.pinchPoint : model.stableIndexTip
 
+      const rawDirection = pointingDirection(model) ?? 'none'
+      const direction = state.direction.update(rawDirection) ?? 'none'
+
       hands.push({
         hand: model.handedness,
         gesture,
@@ -184,6 +226,7 @@ export class GestureRecognizer {
         pointer: { x: control.x, y: control.y },
         depth: model.depth,
         score: model.score,
+        pointDirection: direction === 'none' ? null : direction,
         model,
       })
     }
@@ -226,3 +269,36 @@ export const GESTURE_LABELS: Record<GestureName, string> = {
   thumb_left: 'Polegar ←',
   thumb_right: 'Polegar →',
 }
+
+/**
+ * Um comando: o identificador que o controlador acende, o que ele faz e como
+ * formá-lo com a mão.
+ */
+export interface CommandEntry {
+  id: CommandId
+  icon: string
+  action: string
+  /** A combinação de dedos, em palavras — é o que se aprende a fazer. */
+  fingers: string
+}
+
+export type CommandId = 'scroll_down' | 'stop'
+
+/**
+ * O vocabulário ativo: UM comando, e o gesto que o encerra.
+ *
+ * A escolha do par não é estética. Mão aberta e punho são as duas poses mais
+ * separáveis que o rastreador produz: a aberta exige só 4 dos 5 dedos lidos
+ * como esticados (tolera um dedo mal rastreado), o punho exige zero, e entre
+ * elas há uma zona morta larga onde um frame ruim não vira comando nenhum.
+ * Nenhuma das duas depende de direção, de dedo específico nem da outra mão —
+ * cada dependência dessas era um ponto de falha do vocabulário anterior.
+ *
+ * Esta lista é a fonte única: o guia na tela é montado a partir dela e o
+ * controlador acende `id`s daqui. Um comando que existe num lugar e não no
+ * outro é o que os testes impedem.
+ */
+export const COMMANDS: CommandEntry[] = [
+  { id: 'scroll_down', icon: '🖐️', action: 'Rolar para baixo', fingers: 'mão aberta' },
+  { id: 'stop', icon: '✊', action: 'Parar', fingers: 'punho fechado' },
+]

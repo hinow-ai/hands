@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hands — acesso à câmera</title>
+    <style>
+      /* Mesma decisão do popup: claro sempre, sem seguir o tema do sistema. */
+      :root {
+        color-scheme: light;
+        --bg: #ffffff;
+        --fg: #16181d;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --accent: #16a34a;
+        --card: #f7f8fa;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px 20px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { max-width: 460px; }
+      h1 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
+      p { margin: 0 0 14px; color: var(--muted); }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 9px;
+        padding: 11px 20px;
+        font: 600 14px inherit;
+        color: #fff;
+        background: var(--accent);
+        cursor: pointer;
+      }
+      button[disabled] { opacity: .55; cursor: default; }
+      .note {
+        margin-top: 18px;
+        padding: 12px 14px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .msg { margin-top: 16px; font-weight: 600; }
+      .msg.ok { color: var(--accent); }
+      .msg.err { color: #dc2626; }
+      code {
+        font: 12px ui-monospace, monospace;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Liberar a câmera para o Hands</h1>
+      <p>
+        O reconhecimento de gestos roda num documento invisível da extensão, e um documento
+        invisível não pode exibir a caixa de permissão do Chrome. Esta página existe só para
+        pedir esse acesso uma única vez — depois vale para todos os sites.
+      </p>
+      <p>
+        Ao clicar, o Chrome pergunta se a extensão pode usar a câmera. Escolha
+        <strong>Permitir</strong>. O vídeo não sai da sua máquina.
+      </p>
+
+      <button id="grant">Permitir acesso à câmera</button>
+      <div class="msg" id="msg" hidden></div>
+
+      <div class="note" id="blockedHelp" hidden>
+        O acesso está <strong>bloqueado</strong> para esta extensão. Para reverter, abra
+        <code>chrome://settings/content/camera</code>, encontre o endereço desta página na lista
+        de bloqueados, remova-o e volte aqui.
+      </div>
+    </main>
+    <script type="module" src="permission.js"></script>
+  </body>
+</html>

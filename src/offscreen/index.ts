@@ -20,6 +20,9 @@ import { CameraStatus, FrameSnapshot, HandSnapshot, RuntimeMessage } from '../co
 const TARGET_FPS = 30
 const FRAME_INTERVAL = 1000 / TARGET_FPS
 
+/** Índices das pontas no esqueleto do MediaPipe: polegar a mínimo, nessa ordem. */
+const FINGERTIPS = [4, 8, 12, 16, 20]
+
 let landmarker: HandLandmarker | null = null
 let stream: MediaStream | null = null
 let video: HTMLVideoElement | null = null
@@ -46,22 +49,34 @@ async function createLandmarker(): Promise<HandLandmarker> {
       delegate: 'GPU' as const,
     },
     runningMode: 'VIDEO' as const,
-    numHands: 2,
+    // Uma mão: o vocabulário atual tem um só comando, e pedir duas dobra o
+    // custo de inferência e abre a porta para o defeito clássico do MediaPipe
+    // de detectar a mesma mão duas vezes — uma como Left, outra como Right —
+    // criando uma segunda mão fantasma num gesto qualquer.
+    numHands: 1,
     minHandDetectionConfidence: 0.5,
     minHandPresenceConfidence: 0.5,
     minTrackingConfidence: 0.5,
   }
 
   try {
-    return await HandLandmarker.createFromOptions(vision, options)
+    const gpu = await HandLandmarker.createFromOptions(vision, options)
+    console.info('[gesture-nav] modelo carregado na GPU')
+    return gpu
   } catch (err) {
     // Nem todo ambiente dá WebGL a um documento invisível. A CPU sustenta 30fps
     // com folga para duas mãos, então a queda de desempenho é aceitável.
-    console.warn('[gesture-nav] GPU indisponível, usando CPU:', err)
-    return HandLandmarker.createFromOptions(vision, {
+    //
+    // Este aviso é esperado e não indica falha: quem falha de verdade aparece
+    // como erro no `start()`. Dizê-lo aqui evita que o ruído no console seja
+    // confundido com a causa de a extensão não ligar.
+    console.info('[gesture-nav] sem WebGL no documento offscreen — caindo para CPU (normal):', err)
+    const cpu = await HandLandmarker.createFromOptions(vision, {
       ...options,
       baseOptions: { ...options.baseOptions, delegate: 'CPU' as const },
     })
+    console.info('[gesture-nav] modelo carregado na CPU')
+    return cpu
   }
 }
 
@@ -102,6 +117,11 @@ function toSnapshot(result: HandLandmarkerResult, timestamp: number): FrameSnaps
           pointer: h.pointer,
           depth: h.depth,
           score: h.score,
+          pointDirection: h.pointDirection,
+          tips: FINGERTIPS.map((i) => {
+            const p = h.model.landmarks[i]
+            return p ? { x: p.x, y: p.y } : { x: 0, y: 0 }
+          }),
         }
       : null
 
@@ -145,7 +165,13 @@ function tick(): void {
 }
 
 async function start(): Promise<void> {
-  if (running) return
+  // Um segundo pedido com a câmera já rodando não é erro: o service worker pode
+  // ter perdido o estado e estar reconstruindo o que já existe. Reafirmar o
+  // status é o que evita que ele fique achando que nada subiu.
+  if (running) {
+    report('running')
+    return
+  }
   report('starting')
 
   try {
@@ -160,6 +186,7 @@ async function start(): Promise<void> {
     })
   } catch (err) {
     const name = (err as Error)?.name
+    console.error('[gesture-nav] a câmera não abriu:', err)
     if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
       report('denied', 'Permissão de câmera negada')
     } else {
@@ -176,6 +203,10 @@ async function start(): Promise<void> {
     try {
       landmarker = await createLandmarker()
     } catch (err) {
+      // O status vai para o popup, mas quem abre o console do offscreen para
+      // investigar precisa do objeto inteiro — a mensagem sozinha costuma
+      // omitir a causa real.
+      console.error('[gesture-nav] o modelo não carregou:', err)
       report('error', `Falha ao carregar o modelo: ${(err as Error)?.message ?? err}`)
       stop()
       return
@@ -213,5 +244,14 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   }
 })
 
-// Avisa que o documento subiu e já está pronto para receber comandos.
+/**
+ * Anuncia que o documento subiu.
+ *
+ * `createDocument()` resolve para quem criou, mas quem cria não tem como saber
+ * se este script já registrou o listener acima — e um `GN_START_CAMERA` enviado
+ * antes disso simplesmente se perde, deixando a extensão ligada e cega. Em vez
+ * de depender do tempo, o anúncio parte daqui: o service worker responde
+ * mandando iniciar, se for para estar ligado.
+ */
 report('off')
+chrome.runtime.sendMessage({ type: 'GN_OFFSCREEN_READY' } satisfies RuntimeMessage).catch(() => {})

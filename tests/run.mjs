@@ -456,6 +456,75 @@ async function main() {
     )
   }
 
+  // ---------------------------------------------------- comandos ativos
+
+  // A lista é a fonte única: o guia na tela é montado a partir dela e o
+  // controlador acende os `id`s daqui. Um comando que existe num lugar e não
+  // no outro não quebra a compilação nem o runtime — só deixa de funcionar em
+  // silêncio, ou vira uma linha na tela que nunca acende.
+  {
+    const { COMMANDS } = mod
+    const ids = COMMANDS.map((c) => c.id)
+
+    check(
+      'o vocabulário ativo é um comando e o gesto que o encerra',
+      JSON.stringify(ids) === JSON.stringify(['scroll_down', 'stop']),
+      ids.join(', '),
+    )
+    check('nenhum id se repete', new Set(ids).size === ids.length)
+    for (const entry of COMMANDS) {
+      check(
+        `comando "${entry.action}" está completo`,
+        Boolean(entry.icon && entry.action && entry.fingers),
+      )
+    }
+
+    // As poses do comando e do parar precisam ser as duas mais separáveis do
+    // motor: aberta (>=4 dedos) e punho (0 dedos), com a zona morta no meio.
+    const openFrame = settle(new GestureRecognizer(), buildHandModel, makeHand({ ...POSES.open }))
+    const fistFrame = settle(new GestureRecognizer(), buildHandModel, makeHand({ ...POSES.fist }))
+    check('mão aberta é o gesto do comando', openFrame.right?.gesture === 'open')
+    check('punho é o gesto de parar', fistFrame.right?.gesture === 'fist')
+  }
+
+  // ---------------------------------------------------- direção do apontar
+
+  // A direção do indicador sai do vocabulário ativo por ora, mas continua no
+  // motor para voltar com a rolagem direcional. É medida pelo eixo do dedo:
+  // precisa responder cima e baixo, e precisa RECUSAR o que não é nem um nem
+  // outro: um dedo apontando de lado que oscilasse entre cima e baixo rolaria a
+  // página sozinho, que é a pior falha possível aqui.
+  {
+    // Um reconhecedor por medida: a direção é confirmada ao longo de vários
+    // frames, e reaproveitar o estado faria uma medição contaminar a seguinte.
+    const dirAt = (rotation) => {
+      const frame = settle(
+        new GestureRecognizer(),
+        buildHandModel,
+        makeHand({ ...POSES.point, rotation }),
+        'right',
+      )
+      return frame.right?.pointDirection ?? null
+    }
+
+    check('indicador para cima é lido como cima', dirAt(0) === 'up', `veio ${dirAt(0)}`)
+    check(
+      'indicador para baixo é lido como baixo',
+      dirAt(Math.PI) === 'down',
+      `veio ${dirAt(Math.PI)}`,
+    )
+    check(
+      'indicador na horizontal não vira direção',
+      dirAt(Math.PI / 2) === null,
+      `veio ${dirAt(Math.PI / 2)}`,
+    )
+    check(
+      'indicador na horizontal para o outro lado também não',
+      dirAt(-Math.PI / 2) === null,
+      `veio ${dirAt(-Math.PI / 2)}`,
+    )
+  }
+
   await cleanup()
 
   // ---------------------------------------------------- resultado

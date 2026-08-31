@@ -1,8 +1,10 @@
-# Gesture Nav
+# Hands
+
+[hands.hinow.ai](https://hands.hinow.ai)
 
 Controle a navegação de **qualquer site** com as mãos, pela webcam. Extensão Chrome (MV3).
-Mover o cursor, clicar, rolar, arrastar, dar zoom em imagens e navegar num mapa — sem tocar
-em mouse ou teclado.
+Hoje o vocabulário é mínimo e deliberado: **um comando** — mão aberta rola a página para baixo,
+punho fechado para. Os demais voltam um a um, e cada um só entra depois de ficar confiável.
 
 O vídeo nunca sai da máquina: câmera e modelo rodam localmente, e o que trafega entre os
 processos são só os gestos já reconhecidos.
@@ -21,31 +23,39 @@ Depois, em `chrome://extensions`: ative o **modo desenvolvedor**, clique em
 **Carregar sem compactação** e escolha a pasta `dist/`.
 
 Ative pelo ícone da extensão ou por <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. Na primeira
-ativação o Chrome pede permissão de câmera — concedida **uma vez para a extensão**, não por
-site visitado.
+ativação abre-se uma aba pedindo acesso à câmera: conceda ali, **uma vez para a extensão**, e
+vale para todos os sites — não é por site visitado.
+
+O pedido precisa dessa aba porque a câmera é aberta no documento offscreen, e um contexto sem
+interface não pode exibir a caixa de permissão do Chrome: pedir de lá volta negado sem
+perguntar nada. Como a permissão é gravada por origem, concedê-la numa página visível da
+extensão libera o offscreen de vez. Se o acesso tiver sido bloqueado antes, remova o bloqueio
+em `chrome://settings/content/camera` e ative de novo.
 
 ---
 
 ## Os gestos
 
-Cada um reaproveita algo que a mão já sabe fazer em trackpad ou celular, e todos são separáveis
-pela contagem de dedos esticados, o que os torna difíceis de confundir entre si.
+Um comando, e o gesto que o encerra. É o vocabulário inteiro.
 
 | Gesto | Ação |
 |---|---|
-| ☝️ **Apontar** (só o indicador) | Move o cursor |
-| 🤏 **Pinça** | Clica. Mantendo fechada e movendo, arrasta |
-| ✌️ **Dois dedos** | Rola a página, com inércia ao soltar |
-| ✊ **Punho** | Trava o cursor para reposicionar o braço |
-| 🖐️ **Mão aberta** | Repouso — nada acontece |
-| 🤏🤏 **Duas pinças** | Zoom pela distância entre as mãos |
-| 👈 **Polegar ao lado** | Voltar / avançar no histórico |
+| 🖐️ **Mão aberta** | Rola a página para baixo |
+| ✊ **Punho fechado** | Para |
 
-O **punho** merece destaque: é o equivalente a levantar o mouse da mesa. Quando a mão chega ao
-limite do alcance confortável, feche o punho, traga o braço de volta e reabra — o cursor não se
-move nesse intervalo.
+Qualquer mão serve — o rótulo esquerda/direita do rastreador erra com frequência, e com um só
+comando não há ambiguidade que dependa dele. Tirar a mão do quadro também para: a falha, quando
+houver, é para o lado de não executar nada.
 
-A mão direita comanda o cursor; se só a esquerda estiver no quadro, ela assume.
+**Por que este par.** Mão aberta e punho são as duas poses mais separáveis que o rastreador
+produz. A aberta exige só 4 dos 5 dedos lidos como esticados — tolera um dedo mal rastreado —,
+o punho exige zero, e entre as duas há uma zona morta larga onde um frame ruim não vira comando
+nenhum. Nenhuma das duas depende de um dedo específico, de direção ou da outra mão. É o degrau
+de ~100% de acerto sobre o qual os próximos comandos entram, um por vez.
+
+> Rolar para cima, clique, arraste, zoom, histórico e a rolagem por dois dedos estão
+> **desativados**. O motor que os reconhece continua no repositório, testado, para serem
+> reintroduzidos um a um. O que não está no vocabulário acima não age na página.
 
 ---
 
@@ -119,6 +129,11 @@ instantâneo.
 ---
 
 ## O que dá a precisão
+
+> Esta seção descreve a mira fina para clicar em alvos pequenos. Com o clique desativado, o
+> **clique armado** e o **magnetismo** estão fora do caminho ativo — ficam aqui porque voltam
+> junto com o comando que servem. O ganho adaptativo e a estabilização da ponta continuam
+> valendo: são eles que seguram o cursor firme enquanto a página rola.
 
 Filtrar remove o tremor, não a amplificação. A área ativa amplia o quadro da câmera em cerca de
 cinco vezes até a tela, então cada pixel de erro do rastreamento vira cinco na tela — e nenhum
@@ -204,6 +219,41 @@ No popup da extensão:
 - **Área de alcance** — quanto do quadro mapeia para a tela. Menor exige menos movimento de braço.
 - **Estabilidade do cursor** — corte mínimo do filtro. Menor deixa mais firme, com um pouco mais de lag.
 - **Velocidade da rolagem** — quanto o movimento da mão é ampliado.
+- **Guia de gestos**, **pontas dos dedos** e **painel de estado** — o que aparece na tela, abaixo.
+
+---
+
+## O que aparece na tela
+
+Três camadas, todas desligáveis no popup para quem já não precisa delas.
+
+**Guia de gestos.** Um painel no canto inferior direito. Cada linha traz o que o gesto faz e a
+pose que o forma — a informação que falta quando alguém sabe que existe um gesto de rolar mas
+não lembra como fazê-lo. A linha do comando em curso acende. Mão fora do quadro esmaece o painel
+inteiro: é a resposta à pergunta "ele está me vendo?" sem precisar testar um gesto para
+descobrir.
+
+O destaque nunca é só a cor. A linha ativa muda de fundo, ganha uma barra à esquerda e escreve
+`agora` — quem não distingue o verde continua sabendo qual está ativa. O `Parar` acende em
+vermelho, não em verde: parar é o oposto de agir, e a cor precisa dizer isso sozinha.
+
+**Pontas dos dedos.** Cinco bolinhas por mão, uma cor por dedo, mão esquerda em tons quentes e
+direita em tons frios — a primeira pergunta de quem olha a tela é qual das duas é a sua mão
+direita. O indicador leva um anel branco por ser o que comanda o cursor. Quando o rastreamento
+perde um dedo, isso fica visível no mesmo instante, e a pessoa tem o que corrigir: a posição da
+mão, a luz ou o enquadramento.
+
+As pontas passam pela mesma conversão do cursor, e não pelo quadro inteiro da câmera. É o que faz
+a bolinha do indicador cair sobre o cursor que ela comanda, em vez de andar num espaço próprio e
+desmentir a relação entre a mão e o ponteiro.
+
+**Painel de estado.** No rodapé, diz em palavras o que está acontecendo agora: `Procurando a
+mão`, `Parado`, `Rolando para baixo`. O guia ensina o vocabulário; este diz em que ponto dele
+você está.
+
+Só as cinco pontas atravessam o IPC — dez números por mão, não os cento e trinta que os 21
+landmarks custariam. É o suficiente para desenhar o rastreamento sem o peso que motivou deixar o
+esqueleto inteiro fora do protocolo.
 
 ---
 

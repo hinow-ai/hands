@@ -27,6 +27,7 @@ const ENTRIES = [
   { in: 'src/background/index.ts', out: 'background', format: 'esm' },
   { in: 'src/offscreen/index.ts', out: 'offscreen', format: 'esm' },
   { in: 'src/popup/index.ts', out: 'popup', format: 'esm' },
+  { in: 'src/permission/index.ts', out: 'permission', format: 'esm' },
 ]
 
 async function copyStatic() {
@@ -96,7 +97,10 @@ async function run() {
     target: ['chrome116'],
     platform: 'browser',
     minify: !watch,
-    sourcemap: watch ? 'inline' : false,
+    // Mesmo no build minificado: sem mapa, um erro no console aparece como
+    // `offscreen.js:41 (Zu)` — posição inútil num bundle de uma linha só. O
+    // mapa fica em arquivo à parte, então não pesa no que o navegador carrega.
+    sourcemap: watch ? 'inline' : true,
     legalComments: 'none',
     logLevel: 'info',
   }))

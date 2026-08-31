@@ -63,6 +63,37 @@ export const DEFAULT_POINTER_CONFIG: PointerConfig = {
   fastSpeed: 850,
 }
 
+/**
+ * Converte coordenada normalizada do quadro para pixel do viewport.
+ *
+ * Exportada porque o cursor não é a única coisa desenhada a partir do quadro: o
+ * feedback das pontas dos dedos precisa cair exatamente no mesmo espaço, senão a
+ * bolinha do indicador aparece longe do cursor que ela comanda — e o que era
+ * para explicar o rastreamento passa a contradizê-lo.
+ */
+export function frameToScreen(
+  nx: number,
+  ny: number,
+  width: number,
+  height: number,
+  config: Pick<PointerConfig, 'activeWidth' | 'activeHeight' | 'verticalBias'>,
+): { x: number; y: number } {
+  const { activeWidth, activeHeight, verticalBias } = config
+
+  const halfW = activeWidth / 2
+  const halfH = activeHeight / 2
+  const cx = 0.5
+  const cy = 0.5 - verticalBias
+
+  const tx = (nx - (cx - halfW)) / activeWidth
+  const ty = (ny - (cy - halfH)) / activeHeight
+
+  return {
+    x: clamp(tx, 0, 1) * width,
+    y: clamp(ty, 0, 1) * height,
+  }
+}
+
 export interface PointerState {
   /** Posição em pixels do viewport, já suavizada e interpolada. */
   x: number
@@ -106,22 +137,13 @@ export class PointerMapper {
     this.fy = new OneEuroFilter({ minCutoff: this.config.minCutoff, beta: this.config.beta })
   }
 
-  /** Converte coordenada normalizada do quadro para pixel do viewport. */
-  private frameToScreen(nx: number, ny: number, width: number, height: number) {
-    const { activeWidth, activeHeight, verticalBias } = this.config
-
-    const halfW = activeWidth / 2
-    const halfH = activeHeight / 2
-    const cx = 0.5
-    const cy = 0.5 - verticalBias
-
-    const tx = (nx - (cx - halfW)) / activeWidth
-    const ty = (ny - (cy - halfH)) / activeHeight
-
-    return {
-      x: clamp(tx, 0, 1) * width,
-      y: clamp(ty, 0, 1) * height,
-    }
+  /**
+   * Converte coordenada normalizada do quadro para pixel do viewport, com a
+   * área ativa configurada agora. Público porque o cursor não é a única coisa
+   * desenhada a partir do quadro — ver `frameToScreen`.
+   */
+  toScreen(nx: number, ny: number, width: number, height: number): { x: number; y: number } {
+    return frameToScreen(nx, ny, width, height, this.config)
   }
 
   /**
@@ -154,7 +176,7 @@ export class PointerMapper {
       return
     }
 
-    const raw = this.frameToScreen(normalized.x, normalized.y, viewport.width, viewport.height)
+    const raw = this.toScreen(normalized.x, normalized.y, viewport.width, viewport.height)
     const sx = this.fx.filter(raw.x, timestamp)
     const sy = this.fy.filter(raw.y, timestamp)
 
