@@ -19,6 +19,7 @@
 </p>
 
 <p>
+  <a href="https://github.com/hinow-ai/hands/stargazers"><img alt="Estrelas" src="https://img.shields.io/github/stars/hinow-ai/hands?style=flat&color=e3b341&label=estrelas"></a>
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-116%2B-1a73e8">
   <img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-0.1.1--beta-6f42c1">
   <img alt="Licença: exige atribuição" src="https://img.shields.io/badge/licen%C3%A7a-atribui%C3%A7%C3%A3o-0f9d58">
@@ -35,6 +36,10 @@ alvo pequeno e mantê-lo lá.
 reduzida das mãos, tremor, pouca força ou pouco alcance. E, por tabela, para qualquer um com
 as mãos ocupadas ou longe da mesa: quem apresenta slides do outro lado do palco, quem dá aula
 na lousa, quem está com as mãos na massa e a receita na tela.
+
+> **Se isto te for útil, uma estrela ajuda.** Não pelo número: o GitHub ordena por estrelas, e
+> é essa ordenação que faz alguém que não consegue usar um mouse descobrir que isto existe.
+> Custa um clique e é a forma mais barata de ajudar a chegar até essa pessoa.
 
 **Privacidade.** O vídeo nunca sai da máquina. Câmera e modelo rodam localmente, e o que
 trafega entre os processos são só os gestos já reconhecidos. Nada é gravado nem enviado.

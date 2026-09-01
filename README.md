@@ -19,6 +19,7 @@
 </p>
 
 <p>
+  <a href="https://github.com/hinow-ai/hands/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hinow-ai/hands?style=flat&color=e3b341&label=stars"></a>
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-116%2B-1a73e8">
   <img alt="Version" src="https://img.shields.io/badge/version-0.1.1--beta-6f42c1">
   <img alt="Licence: attribution required" src="https://img.shields.io/badge/license-attribution-0f9d58">
@@ -35,6 +36,10 @@ small target and holding it there.
 mobility, tremor, low strength or short reach. And, as a consequence, for anyone whose hands
 are busy or far from the desk: a speaker driving slides from across the stage, a teacher at
 the whiteboard, a pair of hands covered in flour with the recipe on screen.
+
+> **If this is useful to you, a star helps.** Not for the number: GitHub ranks by stars, and
+> ranking is how somebody who cannot use a mouse finds out this exists. It costs one click and
+> it is the cheapest way to help this reach them.
 
 **Privacy.** The video never leaves the machine. Camera and model run locally, and what
 travels between processes is only the recognised gestures. Nothing is recorded and nothing is
