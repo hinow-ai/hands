@@ -59,7 +59,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["wasm/*", "models/*", "img/*"],
+      "resources": ["img/*"],
       "matches": ["<all_urls>"]
     }
   ]

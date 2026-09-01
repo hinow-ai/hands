@@ -21,7 +21,7 @@
 <p>
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-116%2B-1a73e8">
   <img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-0.1.1--beta-6f42c1">
-  <img alt="Licença" src="https://img.shields.io/badge/licen%C3%A7a-MIT%20%2B%20atribui%C3%A7%C3%A3o-0f9d58">
+  <img alt="Licença: exige atribuição" src="https://img.shields.io/badge/licen%C3%A7a-atribui%C3%A7%C3%A3o-0f9d58">
   <img alt="O vídeo não sai da máquina" src="https://img.shields.io/badge/v%C3%ADdeo-n%C3%A3o%20sai%20da%20sua%20m%C3%A1quina-111">
 </p>
 
@@ -438,6 +438,17 @@ art/             arte de origem (fora do pacote) → npm run art
 public/_locales/ traduções; o idioma segue o navegador
 store/           material da ficha da Chrome Web Store
 ```
+
+---
+
+## Terceiros
+
+O pacote publicado embute o runtime WebAssembly do MediaPipe e o modelo de landmarks da mão,
+os dois do Google e com termos próprios. Estão nomeados, com a atribuição que as licenças
+deles exigem, em [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), e o build copia esse arquivo
+para o `dist/` para ele viajar dentro da extensão.
+
+Tudo que está em `src/` é trabalho original.
 
 ---
 

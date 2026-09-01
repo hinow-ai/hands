@@ -2,13 +2,14 @@
  * Confronto entre o detector antigo e o novo, sobre exatamente as mesmas
  * entradas.
  *
- * Serve a dois propósitos. Confirma que a reescrita resolveu problemas reais, e
- * — mais importante — prova que a bateria de testes tem poder de detecção: um
+ * Serve a dois propósitos. Confirma que a reescrita resolveu problemas reais e,
+ * o que importa mais, prova que a bateria de testes tem poder de detecção: um
  * conjunto de casos que o detector defeituoso também passasse não estaria
  * medindo nada.
  */
 
 import { build } from 'esbuild'
+import { existsSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
@@ -16,7 +17,19 @@ import { fileURLToPath } from 'node:url'
 import { makeHand, POSES } from './hand-fixtures.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
-const LEGACY = '/path/to/legacy/gestureDetector.js'
+
+/**
+ * O detector antigo vive fora deste repositório, então o caminho vem do
+ * ambiente. Sem ele a comparação é pulada em vez de quebrar: quem clona o
+ * projeto não tem esse arquivo, e um teste que falha por ausência de algo que
+ * nunca esteve aqui só ensina a ignorar falha de teste.
+ */
+const LEGACY = process.env.LEGACY_DETECTOR
+
+if (!LEGACY || !existsSync(LEGACY)) {
+  console.log('comparação pulada: defina LEGACY_DETECTOR com o caminho do detector antigo')
+  process.exit(0)
+}
 
 async function loadBoth() {
   const dir = await mkdtemp(join(tmpdir(), 'gn-compare-'))

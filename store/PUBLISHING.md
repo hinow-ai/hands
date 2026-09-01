@@ -71,9 +71,9 @@ correção normalmente é de texto na justificativa, não de código.
 
 Não faço nenhum destes, e são bloqueios reais:
 
-**1. Entrar na conta Google.** O painel pediu reautenticação de
-`paulo@teclia.com`. Digitar sua senha é coisa sua. Não faço login em nome de
-ninguém.
+**1. Entrar na conta Google.** O painel pede reautenticação da conta do
+responsável pela publicação. Digitar sua senha é coisa sua. Não faço login em
+nome de ninguém.
 
 **2. Pagar a taxa de desenvolvedor**, se a conta ainda não for registrada. São
 **US$ 5**, uma vez só, por conta. Não faço pagamentos.

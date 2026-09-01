@@ -21,7 +21,7 @@
 <p>
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-116%2B-1a73e8">
   <img alt="Version" src="https://img.shields.io/badge/version-0.1.1--beta-6f42c1">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT%20%2B%20attribution-0f9d58">
+  <img alt="Licence: attribution required" src="https://img.shields.io/badge/license-attribution-0f9d58">
   <img alt="Video stays local" src="https://img.shields.io/badge/video-never%20leaves%20your%20machine-111">
 </p>
 
@@ -443,6 +443,17 @@ art/             source art (outside the package) → npm run art
 public/_locales/ translations; the language follows the browser
 store/           Chrome Web Store listing material
 ```
+
+---
+
+## Third party
+
+The published package embeds Google's MediaPipe WebAssembly runtime and the hand landmark
+model, both of which carry their own terms. They are named, with the attribution their licences
+require, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and the build copies that file
+into `dist/` so it travels inside the extension.
+
+Everything in `src/` is original work.
 
 ---
 

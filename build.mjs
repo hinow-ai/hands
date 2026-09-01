@@ -33,6 +33,15 @@ const ENTRIES = [
 async function copyStatic() {
   await cp(join(root, 'public'), outdir, { recursive: true })
 
+  // A atribuição viaja dentro do pacote, e não só no repositório: o wasm do
+  // MediaPipe é Apache 2.0, e a licença exige que o aviso acompanhe qualquer
+  // redistribuição. Quem instala a extensão recebe o binário, então é ali que
+  // o aviso precisa estar.
+  for (const doc of ['THIRD-PARTY-NOTICES.md', 'LICENSE']) {
+    const origem = join(root, doc)
+    if (existsSync(origem)) await cp(origem, join(outdir, doc))
+  }
+
   // O runtime wasm do MediaPipe vive dentro do pacote npm; o FilesetResolver
   // espera encontrá-lo num diretório servido pela própria extensão.
   //
