@@ -37,13 +37,28 @@ mobility, tremor, low strength or short reach. And, as a consequence, for anyone
 are busy or far from the desk: a speaker driving slides from across the stage, a teacher at
 the whiteboard, a pair of hands covered in flour with the recipe on screen.
 
-> **If this is useful to you, a star helps.** Not for the number: GitHub ranks by stars, and
-> ranking is how somebody who cannot use a mouse finds out this exists. It costs one click and
-> it is the cheapest way to help this reach them.
-
 **Privacy.** The video never leaves the machine. Camera and model run locally, and what
 travels between processes is only the recognised gestures. Nothing is recorded and nothing is
 sent.
+
+---
+
+<div align="center">
+
+### &#11088; Star this project
+
+**If this can help someone browse without a mouse, help them find it.**
+
+GitHub ranks by stars, and that ranking is what carries the project to other developers, to
+more people testing it, and to the ones who need it and do not know yet that it exists. Every
+report that comes back from a new pair of hands makes the next version better. It costs one
+click.
+
+<a href="https://github.com/hinow-ai/hands/stargazers">
+  <img alt="Star hinow-ai/hands on GitHub" src="https://img.shields.io/github/stars/hinow-ai/hands?style=for-the-badge&logo=github&label=Star%20this%20repo&labelColor=1b2029&color=e3b341">
+</a>
+
+</div>
 
 ---
 

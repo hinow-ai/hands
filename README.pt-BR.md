@@ -37,12 +37,26 @@ reduzida das mãos, tremor, pouca força ou pouco alcance. E, por tabela, para q
 as mãos ocupadas ou longe da mesa: quem apresenta slides do outro lado do palco, quem dá aula
 na lousa, quem está com as mãos na massa e a receita na tela.
 
-> **Se isto te for útil, uma estrela ajuda.** Não pelo número: o GitHub ordena por estrelas, e
-> é essa ordenação que faz alguém que não consegue usar um mouse descobrir que isto existe.
-> Custa um clique e é a forma mais barata de ajudar a chegar até essa pessoa.
-
 **Privacidade.** O vídeo nunca sai da máquina. Câmera e modelo rodam localmente, e o que
 trafega entre os processos são só os gestos já reconhecidos. Nada é gravado nem enviado.
+
+---
+
+<div align="center">
+
+### &#11088; Dê uma estrela ao projeto
+
+**Se isto pode ajudar alguém a navegar sem mouse, ajude essa pessoa a encontrar.**
+
+O GitHub ordena por estrelas, e é essa ordenação que leva o projeto a outros desenvolvedores,
+a mais gente testando e a quem precisa dele e ainda não sabe que existe. Cada relato que volta
+de um novo par de mãos faz a versão seguinte ser melhor. Custa um clique.
+
+<a href="https://github.com/hinow-ai/hands/stargazers">
+  <img alt="Dê uma estrela a hinow-ai/hands no GitHub" src="https://img.shields.io/github/stars/hinow-ai/hands?style=for-the-badge&logo=github&label=Dar%20uma%20estrela&labelColor=1b2029&color=e3b341">
+</a>
+
+</div>
 
 ---
 
