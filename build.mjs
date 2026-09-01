@@ -48,7 +48,7 @@ async function copyStatic() {
       await cp(join(wasmSrc, file), join(outdir, 'wasm', file))
     }
   } else {
-    console.warn('[build] wasm do MediaPipe não encontrado — rode `npm install` primeiro')
+    console.warn('[build] wasm do MediaPipe não encontrado. Rode `npm install` primeiro')
   }
 
   const modelSrc = join(root, 'models/hand_landmarker.task')
@@ -56,7 +56,7 @@ async function copyStatic() {
     await mkdir(join(outdir, 'models'), { recursive: true })
     await cp(modelSrc, join(outdir, 'models/hand_landmarker.task'))
   } else {
-    console.warn('[build] modelo ausente — rode `npm run fetch:model`')
+    console.warn('[build] modelo ausente. Rode `npm run fetch:model`')
   }
 }
 
@@ -77,7 +77,7 @@ async function report() {
         await walk(full, `${prefix}${item.name}/`)
       } else {
         const { size } = await stat(full)
-        console.log(`  ${prefix}${item.name} — ${(size / 1024).toFixed(1)} kB`)
+        console.log(`  ${prefix}${item.name}  ${(size / 1024).toFixed(1)} kB`)
       }
     }
   }

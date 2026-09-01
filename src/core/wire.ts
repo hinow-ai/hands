@@ -9,7 +9,7 @@
  * saber cabe em poucos campos.
  */
 
-import type { GestureName } from './gestures'
+import type { GestureName, PointDirection } from './gestures'
 
 export interface HandSnapshot {
   hand: 'left' | 'right'
@@ -19,8 +19,8 @@ export interface HandSnapshot {
   pointer: { x: number; y: number }
   depth: number
   score: number
-  /** Para onde o indicador aponta, quando aponta claramente para cima ou baixo. */
-  pointDirection: 'up' | 'down' | null
+  /** Para onde o indicador aponta, quando aponta claramente para um dos lados. */
+  pointDirection: PointDirection | null
   /**
    * As cinco pontas de dedo — polegar, indicador, médio, anelar, mínimo — em
    * coordenadas normalizadas do quadro, já espelhadas.
@@ -73,8 +73,23 @@ export type RuntimeMessage =
 
 export type CameraStatus = 'off' | 'starting' | 'running' | 'denied' | 'error'
 
+export type ThemeMode = 'light' | 'dark'
+
 /** Ajustes expostos ao usuário no popup. */
 export interface TuningConfig {
+  /**
+   * Tema de tudo: o painel da extensão e as instruções desenhadas sobre a
+   * página. Um controle só — dois seletores de tema faziam a pessoa escolher
+   * duas vezes a mesma coisa, e quem quisesse trocar precisava lembrar de
+   * mexer nos dois.
+   */
+  theme: ThemeMode
+  /**
+   * Troca os papéis das mãos: a esquerda passa a escolher e clicar, e a
+   * direita a rolar. O padrão serve destros porque escolher e clicar é o
+   * papel de mais precisão, e ele cabe à mão dominante.
+   */
+  leftHanded: boolean
   /** Fração do quadro usada como área ativa. Menor = menos movimento de braço. */
   activeWidth: number
   activeHeight: number
@@ -93,12 +108,20 @@ export interface TuningConfig {
 }
 
 export const DEFAULT_TUNING: TuningConfig = {
+  theme: 'light',
+  leftHanded: false,
   activeWidth: 0.55,
   activeHeight: 0.5,
-  minCutoff: 0.8,
-  beta: 0.02,
+  // Calibrado para câmera mediana — ver DEFAULT_POINTER_CONFIG, que é a
+  // referência destes dois valores.
+  minCutoff: 0.6,
+  beta: 0.012,
   scrollGain: 2.6,
   showHud: true,
   showGuide: true,
-  showTips: true,
+  // Desligadas por padrão: o cursor já mostra a mão sendo rastreada, e as
+  // bolinhas viraram ruído visual. O toggle continua no popup como ferramenta
+  // de diagnóstico — é como se descobre se o problema é a mão, a luz ou o
+  // enquadramento quando um gesto não sai.
+  showTips: false,
 }

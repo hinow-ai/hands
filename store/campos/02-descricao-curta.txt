@@ -1,0 +1,1 @@
+Scroll, pick links and click with hand gestures through your webcam. Built for people who cannot use a mouse. Runs offline.

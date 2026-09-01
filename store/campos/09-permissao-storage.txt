@@ -1,0 +1,1 @@
+Stores the user's own settings: theme, left-handed mode, reach area, cursor stability and scrolling speed. Nothing else is stored, and nothing leaves the device.

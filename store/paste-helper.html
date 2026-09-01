@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>hands.hinow.ai: campos da Chrome Web Store</title>
+    <style>
+      /* Página de apoio ao envio: a Chrome Web Store não pode ser automatizada
+         (o Chrome proíbe qualquer extensão de tocar nas páginas da loja), então
+         o que dá para eliminar é a digitação. Cada campo abaixo está na ordem
+         em que o painel pede, com um botão que copia o valor exato. */
+      :root {
+        color-scheme: light;
+        --bg: #ffffff; --fg: #16181d; --muted: #6b7280;
+        --line: #e6e8ec; --card: #f6f7f9; --accent: #16a34a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto; max-width: 860px; padding: 40px 24px 80px;
+        background: var(--bg); color: var(--fg);
+        font: 14px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .logo {
+        width: 210px; height: 48px; background: currentColor;
+        -webkit-mask: url("logo.png") no-repeat left center;
+        mask: url("logo.png") no-repeat left center;
+        -webkit-mask-size: contain; mask-size: contain;
+      }
+      h1 { font-size: 21px; margin: 22px 0 6px; letter-spacing: -.02em; }
+      .sub { color: var(--muted); margin: 0 0 30px; }
+      h2 {
+        font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+        color: var(--muted); margin: 36px 0 12px;
+        padding-bottom: 8px; border-bottom: 1px solid var(--line);
+      }
+      .f { margin-bottom: 16px; }
+      .f header {
+        display: flex; align-items: baseline; justify-content: space-between;
+        gap: 12px; margin-bottom: 6px;
+      }
+      .f b { font-size: 13px; font-weight: 650; }
+      .f .hint { color: var(--muted); font-size: 11.5px; }
+      .box {
+        position: relative; background: var(--card);
+        border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px;
+      }
+      pre {
+        margin: 0; white-space: pre-wrap; word-break: break-word;
+        font: 12.5px/1.62 ui-monospace, SFMono-Regular, Menlo, monospace;
+        max-height: 260px; overflow: auto;
+      }
+      button.copy {
+        position: absolute; top: 8px; right: 8px;
+        appearance: none; border: 1px solid var(--line); background: var(--bg);
+        color: var(--fg); border-radius: 7px; padding: 5px 11px;
+        font: 650 11.5px inherit; cursor: pointer;
+      }
+      button.copy.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+      ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 13px; }
+      li { margin-bottom: 5px; }
+      .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+      .shots figure { margin: 0; }
+      .shots img { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; }
+      .shots figcaption { font: 11.5px ui-monospace, monospace; color: var(--muted); margin-top: 6px; }
+      .warn {
+        background: #fff8e6; border: 1px solid #f2dfa8; border-radius: 9px;
+        padding: 13px 15px; font-size: 13px; margin-bottom: 8px;
+      }
+      code { font: 12.5px ui-monospace, monospace; background: var(--card);
+        border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+    </style>
+  </head>
+  <body>
+    <div class="logo" role="img" aria-label="hands.hinow.ai"></div>
+    <h1>Campos para o envio na Chrome Web Store</h1>
+    <p class="sub">
+      Na ordem em que o painel pede. Cada bloco tem um botão que copia o valor exato.
+    </p>
+
+    <div class="warn">
+      <strong>Antes de enviar:</strong> publique a política de privacidade em
+      <code>https://hands.hinow.ai/privacy</code>. O texto está em
+      <code>store/privacy-policy.md</code>. A loja recusa qualquer extensão que peça
+      câmera sem uma URL de política acessível.
+    </div>
+
+    <h2>1 · Pacote</h2>
+    <div class="f">
+      <header><b>Arquivo a enviar</b><span class="hint">New Item → Choose file</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>store/hands-hinow-ai-0.1.1.zip</pre></div>
+    </div>
+
+    <h2>2 · Store listing (inglês)</h2>
+
+    <div class="f">
+      <header><b>Name</b><span class="hint">máx. 75</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>hands.hinow.ai: Browse with hand gestures</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Short description</b><span class="hint">máx. 132 · usa 122</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Scroll, pick links and click with hand gestures through your webcam. Built for people who cannot use a mouse. Runs offline.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Detailed description</b><span class="hint">Category: Accessibility</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Browse the web with your hands.
+
+hands.hinow.ai turns your webcam into the pointer. Scroll a page, step through
+its links and click them using a few plain hand poses. No mouse, no keyboard,
+no touchscreen. There is nothing to hold and nothing to aim at.
+
+WHO IT IS FOR
+
+It is built first for people who cannot comfortably use a mouse: limited hand
+mobility, tremor, reduced strength or reach. Pointing at a small target and
+holding still is the hardest thing an interface can ask for, and this extension
+removes that task entirely: the selection steps from link to link instead.
+
+It turns out to serve anyone whose hands are busy or far from the desk as well:
+a speaker driving slides from across the stage, a teacher at the whiteboard,
+someone cooking with the recipe on screen.
+
+HOW IT WORKS
+
+One hand scrolls the page:
+• Open hand: scroll down
+• Index finger up: scroll up
+• Index finger to the side: next link
+• Closed fist: stop everything
+
+The other hand picks and clicks, without aiming:
+• Open hand: select the next link
+• Index finger to the side: go back to the previous link
+• Index finger up, held 2 seconds: click the selected link
+• Closed fist: stop everything
+
+Both hands together change page: hold one hand open and point the other to the
+left or right for one second.
+
+A closed fist on either hand freezes everything: the easiest pose to make is
+the one that stops the system.
+
+There is a left-handed mode, so the hand that picks and clicks is your dominant
+one. On-screen panels show every gesture and light up the one being recognized,
+so you always know whether the camera understood you. Light and dark themes.
+
+PRIVACY
+
+Everything runs on your own machine. The camera image is read locally and
+thrown away frame by frame: no video is recorded, uploaded or sent anywhere,
+and the extension makes no network requests at all. The hand-tracking model
+ships inside the extension, so it works with no internet connection.
+
+The camera only runs while the extension is switched on.
+
+FREE AND OPEN SOURCE
+
+Source code: https://github.com/hinow-ai/hands
+Website: https://hands.hinow.ai
+
+This is a beta. Gestures are being added one at a time, and each one only ships
+after it works reliably.</pre></div>
+    </div>
+
+    <h2>3 · Store listing (português, em Additional languages)</h2>
+
+    <div class="f">
+      <header><b>Nome</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>hands.hinow.ai: Navegue com gestos das mãos</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Descrição curta</b><span class="hint">118 caracteres</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Role a página, escolha links e clique com gestos das mãos pela webcam. Feito para quem não usa mouse. Funciona offline.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Descrição detalhada</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Navegue na web com as mãos.
+
+O hands.hinow.ai transforma a sua webcam no ponteiro. Role a página, percorra os
+links e clique neles com algumas poses simples de mão. Sem mouse, sem teclado,
+sem tela sensível ao toque. Nada para segurar e nada para acertar.
+
+PARA QUEM É
+
+Foi feito primeiro para quem não consegue usar um mouse com conforto:
+mobilidade reduzida das mãos, tremor, pouca força ou pouco alcance. Apontar
+para um alvo pequeno e ficar parado é a tarefa mais difícil que uma interface
+pode pedir, e esta extensão elimina essa tarefa: a seleção anda de link em
+link, em vez de exigir mira.
+
+E acaba servindo a qualquer um com as mãos ocupadas ou longe da mesa: quem
+apresenta slides do outro lado do palco, quem dá aula na lousa, quem está com
+as mãos na massa e a receita na tela.
+
+COMO FUNCIONA
+
+Uma das mãos rola a página:
+• Mão aberta: rola para baixo
+• Indicador para cima: rola para cima
+• Indicador para o lado: próximo link
+• Punho fechado: para tudo
+
+A outra escolhe e clica, sem mirar:
+• Mão aberta: seleciona o próximo link
+• Indicador para o lado: volta ao link anterior
+• Indicador para cima, por 2 segundos: clica no link selecionado
+• Punho fechado: para tudo
+
+As duas juntas trocam de página: mantenha uma mão aberta e aponte a outra para
+a esquerda ou para a direita por um segundo.
+
+Um punho fechado em qualquer das mãos congela tudo: a pose mais fácil de fazer
+é a que interrompe o sistema.
+
+Há modo canhoto, para que a mão que escolhe e clica seja a sua dominante. Os
+painéis na tela mostram todos os gestos e acendem o que está sendo reconhecido,
+então você sempre sabe se a câmera te entendeu. Temas claro e escuro.
+
+PRIVACIDADE
+
+Tudo roda na sua máquina. A imagem da câmera é lida localmente e descartada
+quadro a quadro: nenhum vídeo é gravado, enviado ou sai daí, e a extensão não
+faz requisição de rede nenhuma. O modelo de rastreamento vem dentro da
+extensão, então funciona sem internet.
+
+A câmera só roda enquanto a extensão está ligada.
+
+GRATUITO E DE CÓDIGO ABERTO
+
+Código-fonte: https://github.com/hinow-ai/hands
+Site: https://hands.hinow.ai
+
+Esta é uma versão beta. Os gestos entram um a um, e cada um só é publicado
+depois de funcionar de forma confiável.</pre></div>
+    </div>
+
+    <h2>4 · Privacy practices</h2>
+    <p class="sub" style="margin:-4px 0 14px">
+      É aqui que a maioria das submissões é recusada: cada permissão precisa de uma
+      justificativa que ligue a permissão ao propósito declarado.
+    </p>
+
+    <div class="f">
+      <header><b>Single purpose</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Let people operate web pages with hand gestures captured by the webcam, as an alternative to a mouse and keyboard.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Host permission <code>&lt;all_urls&gt;</code></b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>The extension replaces mouse and keyboard input on whatever page the user is reading. It must draw the gesture overlay and dispatch scrolling, link selection and clicks into that page. There is no way to know in advance which sites a person who cannot use a mouse will need, so the permission cannot be narrowed to a list of domains without breaking the accessibility purpose.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>tabs</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Gestures are delivered only to the tab the user is actually looking at. The extension needs to know which tab is active in order to route recognized gestures to it, and to stop sending them when the user switches away.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>activeTab</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Used together with scripting to reach the page the user is on when the extension is switched on.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>scripting</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Content scripts declared in the manifest only load into pages opened after installation. This permission injects the script into tabs that were already open, so that gesture control works immediately instead of requiring the user, who may not be able to use a mouse, to reload every tab.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>storage</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Stores the user's own settings: theme, left-handed mode, reach area, cursor stability and scrolling speed. Nothing else is stored, and nothing leaves the device.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>offscreen</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>The camera and the hand-tracking model run in a single offscreen document. A webcam is an exclusive resource, so one instance must serve the whole browser instead of one per tab; and because the offscreen document has the extension's own origin, the camera permission is granted once for the extension rather than again on every site the user visits.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Camera</b><span class="hint">pedida em tempo de execução</span></header>
+      <div class="box"><button class="copy">Copiar</button><pre>Hand tracking. Video frames are analysed on the user's machine and discarded immediately; no image is stored or transmitted. The camera is only active while the extension is switched on.</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Privacy policy URL</b></header>
+      <div class="box"><button class="copy">Copiar</button><pre>https://hands.hinow.ai/privacy</pre></div>
+    </div>
+
+    <div class="f">
+      <header><b>Data usage</b><span class="hint">não marque nenhuma caixa</span></header>
+      <div class="box">
+        <ul>
+          <li>A extensão não coleta dado nenhum: deixe <b>todas</b> as categorias desmarcadas</li>
+          <li>Marque as três declarações finais: não vende dados a terceiros; não usa dados
+            para fins alheios ao propósito único; não usa dados para avaliar crédito</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>5 · Imagens</h2>
+    <div class="f">
+      <header><b>Screenshots</b><span class="hint">1280×800 · envie as quatro</span></header>
+      <div class="shots">
+        <figure><img src="screenshots/01-panel-light.png" alt="" /><figcaption>screenshots/01-panel-light.png</figcaption></figure>
+        <figure><img src="screenshots/02-overlay-dark.png" alt="" /><figcaption>screenshots/02-overlay-dark.png</figcaption></figure>
+        <figure><img src="screenshots/03-overlay-light.png" alt="" /><figcaption>screenshots/03-overlay-light.png</figcaption></figure>
+        <figure><img src="screenshots/04-panel-dark.png" alt="" /><figcaption>screenshots/04-panel-dark.png</figcaption></figure>
+      </div>
+    </div>
+    <div class="f">
+      <header><b>Small promo tile</b><span class="hint">440×280</span></header>
+      <div class="shots" style="grid-template-columns: 1fr 1fr">
+        <figure><img src="promo-tile-440x280.png" alt="" /><figcaption>promo-tile-440x280.png</figcaption></figure>
+      </div>
+    </div>
+
+    <h2>6 · Distribution</h2>
+    <div class="f">
+      <div class="box">
+        <ul>
+          <li><b>Visibilidade:</b> comece em <b>Unlisted</b>. Extensão com câmera e
+            <code>&lt;all_urls&gt;</code> passa por revisão manual, e estrear sem listar
+            deixa você testar com um grupo antes de aparecer para todo mundo.</li>
+          <li><b>Prazo:</b> de alguns dias a duas semanas nesse tipo de item.</li>
+          <li><b>Se recusarem:</b> o painel diz o motivo. Quase sempre é texto de
+            justificativa, não código.</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      for (const button of document.querySelectorAll('button.copy')) {
+        button.addEventListener('click', async () => {
+          const text = button.parentElement.querySelector('pre').textContent
+          try {
+            await navigator.clipboard.writeText(text)
+          } catch {
+            // file:// sem permissão de área de transferência: a seleção manual
+            // continua possível, e o aviso evita achar que copiou.
+            const range = document.createRange()
+            range.selectNodeContents(button.parentElement.querySelector('pre'))
+            const sel = getSelection()
+            sel.removeAllRanges()
+            sel.addRange(range)
+            button.textContent = 'Selecionado, Ctrl+C'
+            setTimeout(() => (button.textContent = 'Copiar'), 2200)
+            return
+          }
+          button.textContent = 'Copiado'
+          button.classList.add('done')
+          setTimeout(() => {
+            button.textContent = 'Copiar'
+            button.classList.remove('done')
+          }, 1600)
+        })
+      }
+    </script>
+  </body>
+</html>

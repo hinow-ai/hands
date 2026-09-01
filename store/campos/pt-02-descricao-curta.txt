@@ -1,0 +1,1 @@
+Role a página, escolha links e clique com gestos das mãos pela webcam. Feito para quem não usa mouse. Funciona offline.

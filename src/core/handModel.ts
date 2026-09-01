@@ -197,10 +197,16 @@ function computeFinger(lm: Vec3[], finger: FingerName): FingerState {
  *
  * Só vale com o dedo esticado: dobrado, o eixo das juntas internas não aponta
  * para onde a ponta está, e a projeção pioraria a leitura.
+ *
+ * A força da projeção decai de forma CONTÍNUA conforme o dedo dobra, em vez
+ * de desligar num degrau. Com um corte binário, um curl oscilando em torno do
+ * limiar alternava o ponto de controle entre a ponta crua e a projetada — um
+ * salto de vários pixels a cada alternância, que o resto do pipeline lia como
+ * movimento da mão.
  */
 function stabilizeTip(lm: Vec3[], indexCurl: number): Vec3 {
   const tip = lm[LM.INDEX_TIP]
-  if (indexCurl > 0.35) return tip
+  if (indexCurl > 0.5) return tip
 
   const mcp = lm[LM.INDEX_MCP]
   const dip = lm[LM.INDEX_DIP]
@@ -215,11 +221,15 @@ function stabilizeTip(lm: Vec3[], indexCurl: number): Vec3 {
 
   // Mistura em vez de substituir: a projeção pura descarta qualquer desvio
   // real da ponta, e o dedo não é perfeitamente reto. 75% remove a maior parte
-  // do tremor sem tornar o apontamento rígido demais.
+  // do tremor sem tornar o apontamento rígido demais. De curl 0.3 a 0.5 a
+  // força desce em rampa até zero — é a rampa que elimina o degrau.
+  const fade = Math.max(0, Math.min(1, 1 - (indexCurl - 0.3) / 0.2))
+  const w = 0.75 * fade
+
   return {
-    x: tip.x * 0.25 + projected.x * 0.75,
-    y: tip.y * 0.25 + projected.y * 0.75,
-    z: tip.z * 0.25 + projected.z * 0.75,
+    x: tip.x * (1 - w) + projected.x * w,
+    y: tip.y * (1 - w) + projected.y * w,
+    z: tip.z * (1 - w) + projected.z * w,
   }
 }
 

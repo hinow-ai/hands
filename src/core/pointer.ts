@@ -25,7 +25,16 @@
  *    num monitor de 60Hz.
  */
 
-import { OneEuroFilter, clamp, damp, mapRange } from './filters'
+import { MedianFilter, OneEuroFilter, clamp, damp, mapRange } from './filters'
+
+/**
+ * Corte do filtro aplicado à velocidade estimada dentro do One Euro. Mais
+ * baixo que o padrão de propósito: é pela estimativa de velocidade que o
+ * ruído de uma câmera ruim entra — cada pico parece um movimento rápido e
+ * abre o corte. Suavizar a velocidade fecha essa porta sem custar resposta
+ * nos movimentos reais, que duram muitos frames.
+ */
+const VELOCITY_CUTOFF = 0.6
 
 export interface PointerConfig {
   /** Fração do quadro usada como área ativa, por eixo. 0.6 = 60% central. */
@@ -55,8 +64,12 @@ export const DEFAULT_POINTER_CONFIG: PointerConfig = {
   activeWidth: 0.55,
   activeHeight: 0.5,
   verticalBias: 0.04,
-  minCutoff: 0.8,
-  beta: 0.02,
+  // Calibrado para câmera mediana: corte de repouso mais baixo (cursor mais
+  // cravado parado) e beta menor (o corte abre menos com "velocidade", que é
+  // por onde o ruído se disfarça de movimento). Quem tem câmera boa e quer
+  // menos lag sobe a Estabilidade no popup.
+  minCutoff: 0.6,
+  beta: 0.012,
   followLambda: 28,
   precisionGain: 0.35,
   slowSpeed: 70,
@@ -108,6 +121,9 @@ export class PointerMapper {
   private config: PointerConfig
   private fx: OneEuroFilter
   private fy: OneEuroFilter
+  /** Mata-picos, antes de qualquer outro filtro. Ver `MedianFilter`. */
+  private mx = new MedianFilter()
+  private my = new MedianFilter()
 
   /** Alvo suavizado, em pixels. É para onde o cursor visual caminha. */
   private targetX = 0
@@ -127,14 +143,22 @@ export class PointerMapper {
 
   constructor(config: Partial<PointerConfig> = {}) {
     this.config = { ...DEFAULT_POINTER_CONFIG, ...config }
-    this.fx = new OneEuroFilter({ minCutoff: this.config.minCutoff, beta: this.config.beta })
-    this.fy = new OneEuroFilter({ minCutoff: this.config.minCutoff, beta: this.config.beta })
+    this.fx = this.makeFilter()
+    this.fy = this.makeFilter()
+  }
+
+  private makeFilter(): OneEuroFilter {
+    return new OneEuroFilter({
+      minCutoff: this.config.minCutoff,
+      beta: this.config.beta,
+      dCutoff: VELOCITY_CUTOFF,
+    })
   }
 
   updateConfig(config: Partial<PointerConfig>): void {
     this.config = { ...this.config, ...config }
-    this.fx = new OneEuroFilter({ minCutoff: this.config.minCutoff, beta: this.config.beta })
-    this.fy = new OneEuroFilter({ minCutoff: this.config.minCutoff, beta: this.config.beta })
+    this.fx = this.makeFilter()
+    this.fy = this.makeFilter()
   }
 
   /**
@@ -172,13 +196,17 @@ export class PointerMapper {
       this.hasTarget = false
       this.fx.reset()
       this.fy.reset()
+      this.mx.reset()
+      this.my.reset()
       this.clutching = false
       return
     }
 
+    // Mediana primeiro, One Euro depois: a mediana elimina o pico isolado que
+    // o One Euro deixaria passar como se fosse movimento rápido.
     const raw = this.toScreen(normalized.x, normalized.y, viewport.width, viewport.height)
-    const sx = this.fx.filter(raw.x, timestamp)
-    const sy = this.fy.filter(raw.y, timestamp)
+    const sx = this.fx.filter(this.mx.filter(raw.x), timestamp)
+    const sy = this.fy.filter(this.my.filter(raw.y), timestamp)
 
     // Primeira amostra: cursor nasce onde a mão está, sem deslocamento.
     if (!this.hasTarget) {
@@ -281,6 +309,8 @@ export class PointerMapper {
   reset(): void {
     this.fx.reset()
     this.fy.reset()
+    this.mx.reset()
+    this.my.reset()
     this.hasTarget = false
     this.clutching = false
   }

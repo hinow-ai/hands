@@ -1,65 +1,115 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Hands</title>
+    <title>hands.hinow.ai</title>
     <style>
-      /* Claro sempre, inclusive com o sistema em tema escuro: `color-scheme`
-         fixo em light impede que o navegador escureça por conta própria os
-         controles nativos — slider, checkbox e a barra de rolagem. */
+      /* Um só conjunto de regras para os dois temas: as cores saem de
+         variáveis, e trocar de tema é trocar o atributo da raiz. `color-scheme`
+         acompanha para que slider e barra de rolagem — desenhados pelo
+         navegador, não por nós — mudem junto. */
       :root {
         color-scheme: light;
         --bg: #ffffff;
         --fg: #16181d;
         --muted: #6b7280;
-        --line: #e5e7eb;
+        --line: #e6e8ec;
+        --card: #f6f7f9;
+        --card-line: #eceef2;
         --accent: #16a34a;
-        --accent-off: #16181d;
-        --card: #f7f8fa;
+        --solid: #16181d;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #15171c;
+        --fg: #f2f4f7;
+        --muted: #98a1b0;
+        --line: #262a33;
+        --card: #1c1f26;
+        --card-line: #272b34;
+        --accent: #35d38a;
+        --solid: #f2f4f7;
       }
       * { box-sizing: border-box; }
+      /* Largo em vez de comprido: o popup do Chrome pode chegar a 800px de
+         largura mas só a 600 de ALTURA. Em coluna única o painel passava de
+         750px e rolava; em três colunas — um papel de mão em cada, e a troca
+         de página na terceira — cabe inteiro na altura disponível. */
+      /* 780 e não mais: o popup do Chrome tem teto de 800×600, e passar disso
+         não alarga a janela — só acrescenta uma barra de rolagem horizontal. */
       body {
         margin: 0;
-        width: 320px;
+        width: 780px;
         background: var(--bg);
         color: var(--fg);
         font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
       }
+
+      /* --------------------------------------------------------- topo */
       header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        padding: 14px 16px;
+        gap: 14px;
+        padding: 14px 18px;
         border-bottom: 1px solid var(--line);
       }
-      h1 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
-      /* O ícone já é um disco branco opaco com o traço preto — é o que o mantém
-         visível no popup em tema escuro, sem precisar de fundo por baixo. */
+      .acts { display: flex; align-items: center; gap: 9px; flex: none; }
+      .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+      /* O logo é uma máscara pintada por currentColor: o mesmo arquivo serve
+         ao tema claro e ao escuro, sem uma segunda arte invertida. */
       .logo {
-        width: 30px;
-        height: 30px;
+        width: 216px;
+        height: 49px;
+        background: currentColor;
+        -webkit-mask: url("img/logo.png") no-repeat left center;
+        mask: url("img/logo.png") no-repeat left center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
         flex: none;
       }
-      .hgroup { flex: 1; min-width: 0; }
-      .status { font-size: 11px; color: var(--muted); margin-top: 2px; }
+      /* O estado fica AO LADO do logo, não embaixo: é a primeira coisa que se
+         procura ao abrir o painel, e ali ele divide a linha de leitura com a
+         marca em vez de virar uma segunda linha solta. */
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 11px 5px 9px;
+        border-radius: 999px;
+        background: var(--card);
+        border: 1px solid var(--card-line);
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .status::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        flex: none;
+      }
       .status.on { color: var(--accent); }
       .status.err { color: #dc2626; }
+      :root[data-theme="dark"] .status.err { color: #f87171; }
       button.toggle {
         appearance: none;
         border: 0;
-        border-radius: 8px;
-        padding: 9px 16px;
-        font: 600 13px inherit;
-        color: #fff;
-        background: var(--accent-off);
+        border-radius: 9px;
+        padding: 11px 20px;
+        font: 650 13px inherit;
+        color: var(--bg);
+        background: var(--solid);
         cursor: pointer;
-        transition: background .15s ease;
+        flex: none;
       }
-      button.toggle.on { background: var(--accent); }
+      button.toggle.on { background: var(--accent); color: #fff; }
+
       .grant {
-        margin: 0;
-        padding: 12px 16px;
+        padding: 12px 18px;
         border-bottom: 1px solid var(--line);
         background: var(--card);
       }
@@ -67,64 +117,258 @@
       .grant button {
         appearance: none;
         border: 0;
-        border-radius: 7px;
-        padding: 8px 14px;
-        font: 600 12.5px inherit;
+        border-radius: 8px;
+        padding: 9px 14px;
+        font: 650 12.5px inherit;
         color: #fff;
         background: var(--accent);
         cursor: pointer;
         width: 100%;
       }
       [hidden] { display: none !important; }
-      section { padding: 12px 16px; }
-      .legend { display: grid; gap: 7px; }
-      .hand {
-        font-size: 10.5px;
+
+      /* ------------------------------------------------------ gestos */
+      section { padding: 13px 18px; }
+      /* Uma mão de cada lado e os controles no meio: o painel espelha a
+         postura de quem usa, com a coluna de cada mão do lado dessa mão. */
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      /* A coluna do meio ganha um filete dos dois lados: separa os controles
+         das mãos sem precisar de caixa nem de fundo próprio. */
+      .mid {
+        padding: 0 16px;
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+      }
+      .both { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      /* Em grade os cartões já têm gap; a margem de empilhamento sobraria. */
+      .both .row + .row { margin-top: 0; }
+      .cap {
+        font-size: 10px;
         font-weight: 700;
-        letter-spacing: .05em;
+        letter-spacing: .06em;
         text-transform: uppercase;
         color: var(--muted);
-        margin-top: 3px;
+        margin-bottom: 7px;
       }
-      .hand:first-child { margin-top: 0; }
+      .cap.gap { margin-top: 13px; }
+      /* Altura fixa em todos os cartões: com alturas variando conforme o texto
+         quebrar, as duas colunas de mão deixam de se alinhar linha a linha e a
+         comparação entre as mãos — que é o que o painel existe para permitir —
+         se perde. */
       .row {
         display: grid;
-        grid-template-columns: 34px 1fr;
-        gap: 10px;
+        grid-template-columns: 26px 1fr;
+        gap: 9px;
         align-items: center;
-        padding: 7px 9px;
+        height: 46px;
+        padding: 0 9px;
         background: var(--card);
-        border-radius: 7px;
+        border: 1px solid var(--card-line);
+        border-radius: 8px;
       }
-      .row .ico { font-size: 18px; text-align: center; }
-      .row .txt strong { font-weight: 600; display: block; }
-      .row .txt span { color: var(--muted); font-size: 11.5px; }
-      .tuning { border-top: 1px solid var(--line); }
-      .field { display: grid; gap: 5px; margin-bottom: 12px; }
+      .row + .row { margin-top: 5px; }
+      /* Cada gesto é o próprio desenho da mão, na mesma linguagem visual do
+         logo: quem olha o painel reconhece a pose sem ler o texto. */
+      .ico {
+        width: 26px;
+        height: 26px;
+        background: currentColor;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+      }
+      .ico.flip { transform: scaleX(-1); }
+      /* A troca de página é a única ação de duas mãos: o par de desenhos diz
+         isso antes do texto. */
+      .duo { display: flex; align-items: center; gap: 1px; }
+      .duo .ico { width: 19px; height: 19px; }
+      /* Uma linha para o comando e uma para a pose, sem quebrar: a instrução
+         partida em duas linhas fica mais lenta de ler do que a mesma frase
+         inteira, e é lida de relance no meio de um gesto. */
+      .txt { min-width: 0; }
+      .txt strong,
+      .txt span {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .txt strong { font-weight: 650; font-size: 12.5px; line-height: 1.3; }
+      .txt span { color: var(--muted); font-size: 11px; line-height: 1.3; }
+
+      /* ---------------------------------------------------- ajustes */
+      .set {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 38px;
+        padding: 2px 0;
+      }
+      .set label { font-size: 12.5px; line-height: 1.35; }
+      .set .sub { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.3; }
+      .set + .set { border-top: 1px solid var(--card-line); }
+
+      /* Segmentado em vez de menu suspenso: as duas opções ficam visíveis e a
+         escolha é um clique, não dois. */
+      .seg {
+        display: inline-flex;
+        background: var(--card);
+        border: 1px solid var(--card-line);
+        border-radius: 8px;
+        padding: 2px;
+        flex: none;
+      }
+      .seg button {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font: 600 11.5px inherit;
+        padding: 5px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .seg button.on { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.14); }
+      .seg[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+
+      /* Interruptor: o estado se lê de longe, sem depender de enxergar um
+         tique dentro de um quadradinho de 13px. */
+      .sw {
+        appearance: none;
+        width: 38px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--line);
+        position: relative;
+        cursor: pointer;
+        flex: none;
+        transition: background .15s ease;
+      }
+      .sw::after {
+        content: "";
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.3);
+        transition: transform .15s ease;
+      }
+      .sw:checked { background: var(--accent); }
+      .sw:checked::after { transform: translateX(16px); }
+
+      .sliders { display: grid; gap: 9px; margin-top: 11px; }
+      .field { display: grid; gap: 3px; }
       .field label {
         display: flex;
         justify-content: space-between;
-        font-size: 11.5px;
+        gap: 6px;
+        font-size: 11px;
         color: var(--muted);
       }
-      .field label b { color: var(--fg); font-variant-numeric: tabular-nums; font-weight: 600; }
-      /* Preto nos controles: o verde fica reservado para sinalizar que a
-         extensão está ativa, e não se gasta em decoração o único elemento que
-         precisa ser lido de relance. */
-      input[type="range"],
-      input[type="checkbox"] { accent-color: var(--fg); }
-      input[type="range"] { width: 100%; }
-      .check { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-      .check + .check { margin-top: 9px; }
+      .field label b { color: var(--fg); font-variant-numeric: tabular-nums; font-weight: 650; }
+      input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+
       footer {
-        padding: 10px 16px 14px;
+        padding: 11px 18px 14px;
         color: var(--muted);
         font-size: 11px;
         border-top: 1px solid var(--line);
       }
+
+      /* ------------------------------------------------------- sobre */
+      .info {
+        appearance: none;
+        border: 1px solid var(--card-line);
+        background: var(--card);
+        color: var(--muted);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font: 650 14px inherit;
+        cursor: pointer;
+        flex: none;
+      }
+      .info:hover { color: var(--fg); }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(8,9,12,.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 10;
+      }
+      .sheet {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 18px 50px rgba(0,0,0,.35);
+        padding: 22px 24px;
+        /* Texto corrido não deve atravessar os 760px do painel: a linha longa
+           demais cansa a leitura e faz o olho perder a volta. */
+        max-width: 460px;
+        max-height: 100%;
+        overflow: auto;
+      }
+      .sheet .logo { width: 190px; height: 42px; }
+      .badge {
+        display: inline-block;
+        margin: 9px 0 0;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--card);
+        border: 1px solid var(--card-line);
+        color: var(--muted);
+        font: 650 10.5px ui-monospace, monospace;
+        letter-spacing: .04em;
+      }
+      .sheet h2 {
+        margin: 13px 0 0;
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -.01em;
+      }
+      .sheet p { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+      .sheet p.free { color: var(--fg); font-weight: 600; }
+      .links { display: flex; gap: 8px; margin-top: 15px; }
+      .links a {
+        flex: 1;
+        text-align: center;
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--card-line);
+        background: var(--card);
+        color: var(--fg);
+        text-decoration: none;
+        font: 650 12px inherit;
+      }
+      .links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .sheet .close {
+        appearance: none;
+        margin-top: 9px;
+        width: 100%;
+        padding: 9px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        font: 600 12px inherit;
+        cursor: pointer;
+      }
       kbd {
         background: var(--card);
-        border: 1px solid var(--line);
+        border: 1px solid var(--card-line);
         border-radius: 4px;
         padding: 1px 5px;
         font: 500 10.5px ui-monospace, monospace;
@@ -133,65 +377,113 @@
   </head>
   <body>
     <header>
-      <img class="logo" src="icons/icon48.png" alt="" />
-      <div class="hgroup">
-        <h1>Hands</h1>
-        <div class="status" id="status">Desligado</div>
+      <div class="brand">
+        <div class="logo" role="img" aria-label="hands.hinow.ai"></div>
+        <div class="status" id="status"></div>
       </div>
-      <button class="toggle" id="toggle">Ativar</button>
+      <div class="acts">
+        <!-- A aparência vale para o painel inteiro, então mora no cabeçalho e
+             não numa linha da coluna de controles: ali ela some entre ajustes
+             de gesto, e ocupava uma linha que a lista de comandos aproveita
+             melhor. As duas palavras dizem o que o controle faz sem rótulo. -->
+        <div class="seg" id="themeSeg" role="group">
+          <button type="button" data-value="light" data-i18n="setThemeLight"></button>
+          <button type="button" data-value="dark" data-i18n="setThemeDark"></button>
+        </div>
+        <button class="info" id="info" title="">i</button>
+        <button class="toggle" id="toggle"></button>
+      </div>
     </header>
 
+    <div class="modal" id="about" hidden>
+      <div class="sheet">
+        <div class="logo" role="img" aria-label="hands.hinow.ai"></div>
+        <div class="badge" id="version"></div>
+        <h2 data-i18n="aboutTagline"></h2>
+        <p data-i18n="aboutWhat"></p>
+        <p data-i18n="aboutWho"></p>
+        <p data-i18n="aboutPrivacy"></p>
+        <p class="free" data-i18n="aboutFree"></p>
+        <div class="links">
+          <a class="primary" href="https://hands.hinow.ai" target="_blank" rel="noreferrer" data-i18n="aboutSite"></a>
+          <a href="https://github.com/hinow-ai/hands" target="_blank" rel="noreferrer" data-i18n="aboutSource"></a>
+        </div>
+        <button class="close" id="aboutClose" data-i18n="aboutClose"></button>
+      </div>
+    </div>
+
     <div class="grant" id="grantBox" hidden>
-      <p>
-        O reconhecimento roda num documento invisível, que não pode exibir a caixa de permissão
-        do Chrome. Libere a câmera uma vez numa aba — vale para todos os sites.
-      </p>
-      <button id="grant">Permitir acesso à câmera</button>
+      <p data-i18n="grantText"></p>
+      <button id="grant" data-i18n="grantButton"></button>
     </div>
 
     <section class="legend">
-      <div class="hand">Uma mão — qualquer uma serve</div>
-      <div class="row">
-        <div class="ico">🖐️</div>
-        <div class="txt"><strong>Mão aberta</strong><span>Rola a página para baixo</span></div>
+      <div class="cols">
+        <div>
+          <div class="cap" id="capLeft"></div>
+          <div id="colLeft"></div>
+        </div>
+
+        <div class="mid">
+          <div class="cap" data-i18n="settingsTitle"></div>
+
+          <div class="set">
+            <label for="lefty">
+              <span data-i18n="setLeftHanded"></span>
+              <span class="sub" data-i18n="setLeftHandedSub"></span>
+            </label>
+            <input class="sw" type="checkbox" id="lefty" />
+          </div>
+
+          <div class="set">
+            <label for="guide">
+              <span data-i18n="setInstructions"></span>
+              <span class="sub" data-i18n="setInstructionsSub"></span>
+            </label>
+            <input class="sw" type="checkbox" id="guide" checked />
+          </div>
+
+          <div class="set">
+            <label for="hud">
+              <span data-i18n="setHud"></span>
+              <span class="sub" data-i18n="setHudSub"></span>
+            </label>
+            <input class="sw" type="checkbox" id="hud" checked />
+          </div>
+
+          <div class="set">
+            <label for="tips">
+              <span data-i18n="setTips"></span>
+              <span class="sub" data-i18n="setTipsSub"></span>
+            </label>
+            <input class="sw" type="checkbox" id="tips" />
+          </div>
+
+          <div class="sliders">
+            <div class="field">
+              <label><span data-i18n="setReach"></span> <b id="areaVal">55%</b></label>
+              <input type="range" id="area" min="30" max="90" step="5" value="55" />
+            </div>
+            <div class="field">
+              <label><span data-i18n="setStability"></span> <b id="smoothVal">0.6</b></label>
+              <input type="range" id="smooth" min="30" max="250" step="10" value="60" />
+            </div>
+            <div class="field">
+              <label><span data-i18n="setScrollSpeed"></span> <b id="scrollVal">2.6×</b></label>
+              <input type="range" id="scroll" min="10" max="60" step="2" value="26" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="cap" id="capRight"></div>
+          <div id="colRight"></div>
+        </div>
       </div>
-      <div class="row">
-        <div class="ico">✊</div>
-        <div class="txt"><strong>Punho fechado</strong><span>Para (sair do quadro também para)</span></div>
-      </div>
+
     </section>
 
-    <section class="tuning">
-      <div class="field">
-        <label>Área de alcance <b id="areaVal">55%</b></label>
-        <input type="range" id="area" min="30" max="90" step="5" value="55" />
-      </div>
-      <div class="field">
-        <label>Estabilidade do cursor <b id="smoothVal">0.8</b></label>
-        <input type="range" id="smooth" min="30" max="250" step="10" value="80" />
-      </div>
-      <div class="field">
-        <label>Velocidade da rolagem <b id="scrollVal">2.6×</b></label>
-        <input type="range" id="scroll" min="10" max="60" step="2" value="26" />
-      </div>
-      <label class="check">
-        <input type="checkbox" id="hud" checked />
-        Mostrar painel de estado na página
-      </label>
-      <label class="check">
-        <input type="checkbox" id="guide" checked />
-        Mostrar guia de gestos no canto
-      </label>
-      <label class="check">
-        <input type="checkbox" id="tips" checked />
-        Mostrar as pontas dos dedos
-      </label>
-    </section>
-
-    <footer>
-      Atalho <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. A câmera roda só enquanto estiver ativo e
-      o vídeo nunca sai do seu computador.
-    </footer>
+    <footer id="footer"></footer>
 
     <script type="module" src="popup.js"></script>
   </body>

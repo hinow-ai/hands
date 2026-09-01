@@ -1,0 +1,1 @@
+The camera and the hand-tracking model run in a single offscreen document. A webcam is an exclusive resource, so one instance must serve the whole browser instead of one per tab; and because the offscreen document has the extension's own origin, the camera permission is granted once for the extension rather than again on every site the user visits.

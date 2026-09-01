@@ -1,0 +1,1 @@
+The extension replaces mouse and keyboard input on whatever page the user is reading. It must draw the gesture overlay and dispatch scrolling, link selection and clicks into that page. There is no way to know in advance which sites a person who cannot use a mouse will need, so the permission cannot be narrowed to a list of domains without breaking the accessibility purpose.

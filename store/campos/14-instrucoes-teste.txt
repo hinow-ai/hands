@@ -1,0 +1,39 @@
+No account and no test credentials are required. The extension has no sign-in, no server and no backend of any kind.
+
+WHAT YOU NEED
+
+A webcam. The extension does hand tracking locally, so without a camera it will report that no camera was found.
+
+FIRST RUN
+
+1. Click the extension icon and press "Turn on" (or press Alt+Shift+G).
+2. On the first activation a tab opens asking for camera access. That tab exists because recognition runs in an offscreen document, and an offscreen document cannot display Chrome's permission prompt. Click "Allow camera access" and choose Allow. This is asked once for the extension and then applies to every site.
+3. The tab closes itself and gesture control becomes active.
+
+TRYING IT
+
+Open any page with links. Two panels appear in the bottom corners listing every gesture, and the line for the gesture being recognized lights up, so you can always see what the camera understood.
+
+Hold one hand up, palm towards the camera:
+- Open hand: the page scrolls down
+- Index finger pointing up: the page scrolls up
+- Closed fist: everything stops
+
+With the other hand:
+- Open hand: a link is selected and outlined; repeating or holding the pose moves the selection to the next link
+- Index finger pointing sideways: the selection goes back to the previous link
+- Index finger pointing up, held for 2 seconds: the selected link is clicked, with a progress arc filling around the marker
+- Closed fist: everything stops
+
+Both hands together change page: hold one hand open and point the other one left or right for one second.
+
+If a gesture is not recognized, turn on "Fingertips" in the panel: coloured dots show exactly what the camera is tracking, which makes a lighting or framing problem obvious. Good, even lighting and a hand roughly 50-80 cm from the camera work best.
+
+NOTES FOR REVIEW
+
+- The extension makes no network requests. It declares connect-src 'self' in its content security policy, so the browser blocks any outbound request from its pages.
+- The hand-tracking model and the MediaPipe WebAssembly runtime are files inside the package, loaded through chrome.runtime.getURL. Nothing is fetched at runtime and the extension works with no internet connection.
+- Camera frames are analysed in memory and discarded frame by frame. No image or video is stored or transmitted.
+- The broad host permission is required because the extension replaces mouse and keyboard input on whatever page the user is reading, and there is no way to know in advance which sites a person who cannot use a mouse will need.
+
+Source code: https://github.com/hinow-ai/hands

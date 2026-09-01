@@ -118,6 +118,35 @@ export class OneEuroVec3 {
 }
 
 /**
+ * Mediana deslizante de três amostras — o mata-picos.
+ *
+ * O One Euro é ótimo contra tremor contínuo, mas péssimo contra outliers: um
+ * landmark que salta 30 px por um único frame parece velocidade alta, o corte
+ * abre e o salto passa quase inteiro. A mediana descarta qualquer valor que
+ * não se sustente por pelo menos duas amostras, ao custo de ~1 amostra de
+ * atraso (~33 ms a 30 fps). É o filtro certo para câmera ruim, onde a
+ * interferência aparece como picos isolados, não como tremor.
+ */
+export class MedianFilter {
+  private a: number | null = null
+  private b: number | null = null
+
+  filter(value: number): number {
+    const { a, b } = this
+    this.a = b
+    this.b = value
+    if (a === null || b === null) return value
+    // Mediana de três sem ordenar o array.
+    return Math.max(Math.min(a, b), Math.min(Math.max(a, b), value))
+  }
+
+  reset(): void {
+    this.a = null
+    this.b = null
+  }
+}
+
+/**
  * Schmitt trigger: liga num limiar alto e só desliga num limiar baixo.
  *
  * Sem isto, qualquer valor oscilando em torno do limiar (a distância da pinça,

@@ -1,0 +1,281 @@
+{
+  "extName": {
+    "message": "hands.hinow.ai: hand gesture navigation"
+  },
+  "extDescription": {
+    "message": "Browse any website with your hands, through the webcam. Scroll, pick links and click without touching mouse or keyboard."
+  },
+  "extActionTitle": {
+    "message": "hands.hinow.ai: turn gesture navigation on"
+  },
+  "extCommandToggle": {
+    "message": "Turn gesture navigation on/off"
+  },
+  "handLeft": {
+    "message": "Left hand"
+  },
+  "handRight": {
+    "message": "Right hand"
+  },
+  "roleScroll": {
+    "message": "scrolls the page"
+  },
+  "roleAction": {
+    "message": "picks and clicks"
+  },
+  "bothHands": {
+    "message": "Both hands: change page"
+  },
+  "cmdScrollDown": {
+    "message": "Scroll down"
+  },
+  "cmdScrollUp": {
+    "message": "Scroll up"
+  },
+  "cmdNextLink": {
+    "message": "Next link"
+  },
+  "cmdPrevLink": {
+    "message": "Previous link"
+  },
+  "cmdClick": {
+    "message": "Click the selected link"
+  },
+  "cmdStop": {
+    "message": "Stop everything"
+  },
+  "poseOpen": {
+    "message": "open hand"
+  },
+  "poseFist": {
+    "message": "closed fist"
+  },
+  "posePointUp": {
+    "message": "index finger up"
+  },
+  "poseSide": {
+    "message": "index finger to the side"
+  },
+  "poseClickHold": {
+    "message": "index finger up, 2 s"
+  },
+  "poseStopBoth": {
+    "message": "closed fist: locks all"
+  },
+  "pageNext": {
+    "message": "Next page"
+  },
+  "pagePrev": {
+    "message": "Previous page"
+  },
+  "pageNextPose": {
+    "message": "open hand + finger right, 1s"
+  },
+  "pagePrevPose": {
+    "message": "open hand + finger left, 1s"
+  },
+  "guideNow": {
+    "message": "now"
+  },
+  "statusOff": {
+    "message": "Off"
+  },
+  "statusStarting": {
+    "message": "Starting the camera…"
+  },
+  "statusRunning": {
+    "message": "On: show your hands"
+  },
+  "statusDenied": {
+    "message": "Camera permission denied"
+  },
+  "statusError": {
+    "message": "Camera error"
+  },
+  "btnActivate": {
+    "message": "Turn on"
+  },
+  "btnDeactivate": {
+    "message": "Turn off"
+  },
+  "grantText": {
+    "message": "Recognition runs in an invisible document, which cannot show Chrome's permission prompt. Allow the camera once in a tab, and it counts for every site."
+  },
+  "grantButton": {
+    "message": "Allow camera access"
+  },
+  "setAppearance": {
+    "message": "Appearance"
+  },
+  "setThemeLight": {
+    "message": "Light"
+  },
+  "setThemeDark": {
+    "message": "Dark"
+  },
+  "setLeftHanded": {
+    "message": "Left-handed mode"
+  },
+  "setLeftHandedSub": {
+    "message": "Your left hand picks and clicks"
+  },
+  "setInstructions": {
+    "message": "On-screen instructions"
+  },
+  "setInstructionsSub": {
+    "message": "Gesture panels in the corners"
+  },
+  "setHud": {
+    "message": "Status bar"
+  },
+  "setHudSub": {
+    "message": "The status strip"
+  },
+  "setTips": {
+    "message": "Fingertips"
+  },
+  "setTipsSub": {
+    "message": "Tracking diagnostics"
+  },
+  "setReach": {
+    "message": "Reach area"
+  },
+  "setStability": {
+    "message": "Cursor stability"
+  },
+  "setScrollSpeed": {
+    "message": "Scrolling speed"
+  },
+  "footer": {
+    "message": "Shortcut $SHORTCUT$. The camera only runs while this is on, and the video never leaves your computer.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+Shift+G"
+      }
+    }
+  },
+  "hudSearching": {
+    "message": "Looking for your hands"
+  },
+  "hudSearchingHint": {
+    "message": "One hand scrolls, the other picks and clicks"
+  },
+  "hudScrollDown": {
+    "message": "Scrolling down"
+  },
+  "hudScrollUp": {
+    "message": "Scrolling up"
+  },
+  "hudScrollHint": {
+    "message": "Close that hand to stop"
+  },
+  "hudPaused": {
+    "message": "Paused"
+  },
+  "hudPausedHint": {
+    "message": "A closed fist locks everything: open it to carry on"
+  },
+  "hudClicking": {
+    "message": "Clicking"
+  },
+  "hudClickingHint": {
+    "message": "Hold the finger up for 2 seconds"
+  },
+  "hudNothingSelected": {
+    "message": "Nothing selected"
+  },
+  "hudNothingSelectedHint": {
+    "message": "Open that hand to pick a link first"
+  },
+  "hudLinkSelected": {
+    "message": "Link selected"
+  },
+  "hudLinkSelectedHint": {
+    "message": "Open: next · finger to the side: back · finger up 2 s: click"
+  },
+  "hudIdle": {
+    "message": "Idle"
+  },
+  "hudIdleHint": {
+    "message": "Open that hand to pick a link"
+  },
+  "hudPageConfirm": {
+    "message": "Hold both hands to confirm"
+  },
+  "hudPageChanged": {
+    "message": "Page changed"
+  },
+  "hudPageChangedHint": {
+    "message": "Let go to carry on"
+  },
+  "infoButton": {
+    "message": "About hands.hinow.ai"
+  },
+  "aboutBeta": {
+    "message": "Beta"
+  },
+  "aboutTagline": {
+    "message": "Browse the web with your hands."
+  },
+  "aboutWhat": {
+    "message": "Your webcam becomes the pointer. Scroll a page, step through its links and click them with a few plain hand poses. No mouse, no keyboard, no touchscreen. Nothing to hold, nothing to aim at."
+  },
+  "aboutWho": {
+    "message": "It is built first for people who cannot comfortably use a mouse: limited hand mobility, tremor, reduced strength or reach. It turns out to serve anyone whose hands are busy or far away too: a speaker driving slides from across the stage, a teacher at the whiteboard, a pair of hands covered in flour with the recipe on screen."
+  },
+  "aboutPrivacy": {
+    "message": "Everything runs on your own machine. The camera image is read locally and thrown away frame by frame: no video is uploaded, recorded or sent anywhere."
+  },
+  "aboutFree": {
+    "message": "Free, and open source."
+  },
+  "aboutSite": {
+    "message": "Website"
+  },
+  "aboutSource": {
+    "message": "Source code"
+  },
+  "aboutClose": {
+    "message": "Close"
+  },
+  "settingsTitle": {
+    "message": "Controls"
+  },
+  "permHeading": {
+    "message": "Turn on the camera, once"
+  },
+  "permWhy": {
+    "message": "Gesture recognition runs in an invisible document inside the extension, and an invisible document cannot show Chrome's permission prompt. This page exists only to ask for that access one time, and after this it works on every site."
+  },
+  "permHow": {
+    "message": "When you click, Chrome asks whether the extension may use the camera. Choose <b>Allow</b>."
+  },
+  "permButton": {
+    "message": "Allow camera access"
+  },
+  "permGranted": {
+    "message": "Camera enabled. You can close this tab and start using gestures."
+  },
+  "permDenied": {
+    "message": "Access denied."
+  },
+  "permNoCamera": {
+    "message": "No camera found on this computer."
+  },
+  "permBusy": {
+    "message": "The camera exists, but another program is using it. Close it and try again."
+  },
+  "permFail": {
+    "message": "Could not open the camera."
+  },
+  "permBlockedBefore": {
+    "message": "Access is blocked for this extension. To undo it, open "
+  },
+  "permBlockedAfter": {
+    "message": ", find this page's address in the blocked list, remove it and come back here."
+  },
+  "permPrivacy": {
+    "message": "The image is read on your own machine and thrown away frame by frame. No video is recorded, uploaded or sent anywhere."
+  }
+}

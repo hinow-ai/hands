@@ -37,6 +37,8 @@ const PINCH_OFF = 0.62
 /** Distância a partir da qual a pinça é considerada "totalmente aberta". */
 const PINCH_OPEN = 1.0
 
+export type PointDirection = 'up' | 'down' | 'left' | 'right'
+
 export interface HandGesture {
   hand: 'left' | 'right'
   /** Gesto já estabilizado (exige alguns frames consecutivos). */
@@ -51,13 +53,13 @@ export interface HandGesture {
   depth: number
   score: number
   /**
-   * Para onde o indicador aponta, quando aponta claramente para cima ou para
-   * baixo. Fica fora de `gesture` de propósito: o gesto é invariante a rotação
+   * Para onde o indicador aponta, quando aponta claramente para um dos quatro
+   * lados. Fica fora de `gesture` de propósito: o gesto é invariante a rotação
    * — apontar é apontar em qualquer ângulo — e a direção é justamente o que
    * depende do ângulo. Misturar os dois faria o reconhecimento de "apontar"
    * deixar de ser invariante.
    */
-  pointDirection: 'up' | 'down' | null
+  pointDirection: PointDirection | null
   model: HandModel
 }
 
@@ -80,14 +82,14 @@ class HandState {
   pinch: Hysteresis
   stable: StableValue<GestureName>
   /** A direção passa pela mesma confirmação do gesto — ver `pointDirection`. */
-  direction: StableValue<'up' | 'down' | 'none'>
+  direction: StableValue<PointDirection | 'none'>
 
   constructor() {
     this.pinch = new Hysteresis(PINCH_ON, PINCH_OFF)
     // 3 frames a ~30fps = ~100ms. Rápido o bastante para parecer instantâneo,
     // lento o bastante para descartar um frame espúrio do modelo.
     this.stable = new StableValue<GestureName>(3)
-    this.direction = new StableValue<'up' | 'down' | 'none'>(3)
+    this.direction = new StableValue<PointDirection | 'none'>(3)
   }
 
   reset(): void {
@@ -98,18 +100,19 @@ class HandState {
 }
 
 /**
- * Para onde o indicador aponta.
+ * Para onde o indicador aponta, nas quatro direções.
  *
  * Mede o eixo da junta da base à ponta, e não a inclinação da mão inteira: é o
- * dedo que aponta, e o pulso pode estar em qualquer ângulo. Só responde quando
- * o componente vertical domina o horizontal com folga — sem essa exigência, um
- * dedo apontando de lado oscila entre cima e baixo a cada frame.
+ * dedo que aponta, e o pulso pode estar em qualquer ângulo. Um eixo só vale
+ * quando domina o outro com folga (1.4×): a banda morta larga na diagonal é o
+ * que impede "para cima" e "para o lado" de se confundirem no meio do
+ * caminho — direções que hoje disparam ações diferentes (clicar e voltar).
  *
  * O limiar de comprimento usa o tamanho da palma como unidade, então vale igual
  * com a mão perto ou longe da câmera. Um dedo apontado para a própria câmera se
  * projeta curto na imagem, e é exatamente esse caso que precisa ser recusado.
  */
-function pointingDirection(h: HandModel): 'up' | 'down' | null {
+function pointingDirection(h: HandModel): PointDirection | null {
   const base = h.landmarks[5]
   const tip = h.landmarks[8]
   if (!base || !tip) return null
@@ -117,11 +120,16 @@ function pointingDirection(h: HandModel): 'up' | 'down' | null {
   const dx = tip.x - base.x
   const dy = tip.y - base.y
 
-  if (Math.abs(dy) <= Math.abs(dx) * 1.1) return null
-  if (Math.abs(dy) < h.palmSize * 0.3) return null
-
-  // y cresce para baixo na imagem: ponta acima da junta é apontar para cima.
-  return dy < 0 ? 'up' : 'down'
+  if (Math.abs(dy) > Math.abs(dx) * 1.4) {
+    if (Math.abs(dy) < h.palmSize * 0.3) return null
+    // y cresce para baixo na imagem: ponta acima da junta é apontar para cima.
+    return dy < 0 ? 'up' : 'down'
+  }
+  if (Math.abs(dx) > Math.abs(dy) * 1.4) {
+    if (Math.abs(dx) < h.palmSize * 0.3) return null
+    return dx > 0 ? 'right' : 'left'
+  }
+  return null
 }
 
 export class GestureRecognizer {
@@ -149,9 +157,14 @@ export class GestureRecognizer {
     const sig = fingerSignature(h)
     const count = extendedCount(h)
 
-    // Apontar: indicador esticado, médio e anelar fechados. O mínimo é ignorado
-    // porque muita gente estica o dedinho sem perceber ao apontar.
-    if (h.fingers.index.extended && h.fingers.middle.folded && h.fingers.ring.folded) {
+    // Apontar: indicador esticado e os dois vizinhos NÃO esticados. Exigir que
+    // médio e anelar estivessem totalmente dobrados (curl > 0.6) deixava a pose
+    // natural de apontar sem classe nenhuma: o anelar compartilha tendão com o
+    // médio e raramente passa de meio caminho com o indicador esticado. A zona
+    // intermediária conta a favor do gesto — o que a intenção diz é "só o
+    // indicador", não "os outros em ângulo máximo". O mínimo é ignorado porque
+    // muita gente o estica sem perceber ao apontar.
+    if (h.fingers.index.extended && !h.fingers.middle.extended && !h.fingers.ring.extended) {
       return 'point'
     }
 
@@ -260,7 +273,7 @@ export class GestureRecognizer {
 
 /** Rótulos legíveis, usados no HUD. */
 export const GESTURE_LABELS: Record<GestureName, string> = {
-  idle: '—',
+  idle: '·',
   open: 'Repouso',
   point: 'Apontar',
   pinch: 'Pinça',
@@ -270,35 +283,97 @@ export const GESTURE_LABELS: Record<GestureName, string> = {
   thumb_right: 'Polegar →',
 }
 
+/** Os quatro desenhos de mão da interface. Ver `scripts/prepare-art.py`. */
+export type HandArt = 'open' | 'fist' | 'point' | 'side'
+
 /**
  * Um comando: o identificador que o controlador acende, o que ele faz e como
  * formá-lo com a mão.
+ *
+ * `action` e `fingers` são CHAVES de tradução, não texto. O core não fala
+ * idioma nenhum — quem resolve é a camada que desenha, com `chrome.i18n`, que
+ * por sua vez segue o idioma do navegador. Guardar texto pronto aqui obrigaria
+ * o motor a conhecer o idioma e quebraria os testes, que rodam em Node puro,
+ * onde `chrome` não existe.
  */
 export interface CommandEntry {
   id: CommandId
-  icon: string
+  /** Qual desenho ilustra a pose. O mesmo arquivo serve ao popup e à tela. */
+  art: HandArt
+  /**
+   * Espelhar o desenho na horizontal. A arte lateral aponta para a direita, e
+   * um segundo arquivo espelhado só duplicaria manutenção.
+   */
+  flip?: boolean
+  /** Chave i18n do que o comando faz. */
   action: string
-  /** A combinação de dedos, em palavras — é o que se aprende a fazer. */
+  /** Chave i18n da pose — é o que se aprende a fazer. */
   fingers: string
 }
 
-export type CommandId = 'scroll_down' | 'stop'
+export type CommandId =
+  | 'scroll_down'
+  | 'scroll_up'
+  | 'stop'
+  | 'next_link'
+  | 'prev_link'
+  | 'click'
+  | 'rest'
+  | 'page_next'
+  | 'page_prev'
 
 /**
- * O vocabulário ativo: UM comando, e o gesto que o encerra.
+ * O vocabulário ativo, uma lista por mão. Papéis fixos, decididos pela
+ * posição da mão em relação ao corpo (ver `HandAssigner`): a esquerda rola, a
+ * direita clica.
  *
- * A escolha do par não é estética. Mão aberta e punho são as duas poses mais
+ * A escolha das poses não é estética. Mão aberta e punho são as duas mais
  * separáveis que o rastreador produz: a aberta exige só 4 dos 5 dedos lidos
  * como esticados (tolera um dedo mal rastreado), o punho exige zero, e entre
  * elas há uma zona morta larga onde um frame ruim não vira comando nenhum.
- * Nenhuma das duas depende de direção, de dedo específico nem da outra mão —
- * cada dependência dessas era um ponto de falha do vocabulário anterior.
+ * A direita não mira: ESCOLHE. A seleção anda de link em link na ordem de
+ * leitura — mão aberta avança, indicador para o lado volta — e o indicador
+ * para cima sustentado por 2 s clica no que está selecionado. O punho para
+ * tudo, nas DUAS mãos: a pose de descanso é a mesma em todo o vocabulário.
+ * Ninguém precisa levar um cursor até um alvo: apontar-e-acertar é a tarefa
+ * motora mais difícil que uma interface pode pedir, e é exatamente a que
+ * este vocabulário elimina.
  *
- * Esta lista é a fonte única: o guia na tela é montado a partir dela e o
+ * O apontar para cima da esquerda exige a direção do dedo além da pose —
+ * apontar para baixo não sobe a tela — e uma sustentação curta no
+ * controlador, porque fechar a mão aberta passa por um "apontar" transitório.
+ *
+ * Estas listas são a fonte única: o guia na tela é montado a partir delas e o
  * controlador acende `id`s daqui. Um comando que existe num lugar e não no
  * outro é o que os testes impedem.
  */
-export const COMMANDS: CommandEntry[] = [
-  { id: 'scroll_down', icon: '🖐️', action: 'Rolar para baixo', fingers: 'mão aberta' },
-  { id: 'stop', icon: '✊', action: 'Parar', fingers: 'punho fechado' },
+/**
+ * As listas são por PAPEL, não por mão. Qual mão cumpre qual papel é uma
+ * escolha de quem usa — ver o modo canhoto em `TuningConfig.leftHanded` —, e
+ * amarrar o vocabulário à mão obrigaria a duplicar tudo para inverter.
+ *
+ * `next_link` aparece nos DOIS papéis de propósito: avançar é a ação mais
+ * frequente da navegação, e dois caminhos motores para o mesmo comando é
+ * redundância a favor de quem tem controle limitado de uma das mãos.
+ */
+export const COMMANDS_SCROLL: CommandEntry[] = [
+  { id: 'scroll_down', art: 'open', action: 'cmdScrollDown', fingers: 'poseOpen' },
+  { id: 'scroll_up', art: 'point', action: 'cmdScrollUp', fingers: 'posePointUp' },
+  { id: 'next_link', art: 'side', action: 'cmdNextLink', fingers: 'poseSide' },
+  { id: 'stop', art: 'fist', action: 'cmdStop', fingers: 'poseStopBoth' },
+]
+
+export const COMMANDS_ACTION: CommandEntry[] = [
+  { id: 'next_link', art: 'open', action: 'cmdNextLink', fingers: 'poseOpen' },
+  // Espelhada: esta mão volta, e um desenho apontando para trás diz isso sem
+  // depender de ler o texto ao lado.
+  { id: 'prev_link', art: 'side', flip: true, action: 'cmdPrevLink', fingers: 'poseSide' },
+  { id: 'click', art: 'point', action: 'cmdClick', fingers: 'poseClickHold' },
+  { id: 'rest', art: 'fist', action: 'cmdStop', fingers: 'poseStopBoth' },
+]
+
+/** A troca de página é a única ação de duas mãos; por isso fica à parte. */
+export const COMMANDS_BOTH: CommandEntry[] = [
+  { id: 'page_next', art: 'side', action: 'pageNext', fingers: 'pageNextPose' },
+  { id: 'page_prev', art: 'side', flip: true, action: 'pagePrev', fingers: 'pagePrevPose' },
 ]

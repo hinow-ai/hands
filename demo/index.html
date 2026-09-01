@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gesture Nav — campo de teste</title>
+    <title>Gesture Nav: campo de teste</title>
     <style>
       :root {
         --bg: #0f1115;
@@ -142,7 +142,7 @@
         <h2>Alvos de clique</h2>
         <p class="sub">Aponte para mover o cursor e feche a pinça para clicar. Alvos de tamanhos diferentes medem a precisão real.</p>
         <div class="targets" id="targets"></div>
-        <div class="counter" id="counter">Cliques: <b>0</b> · Último alvo: —</div>
+        <div class="counter" id="counter">Cliques: <b>0</b> · Último alvo: nenhum</div>
       </section>
 
       <section>
@@ -169,7 +169,7 @@
         <h2>Conteúdo de outra origem</h2>
         <p class="sub">Sirva a demo também na porta 5600 (<code>PORT=5600 npm run demo</code>) e abra
         <a href="/iframe-test.html" style="color:#38bdf8">a página de iframe</a>. O quadro embutido vem de
-        outra origem, onde nenhum evento sintético do frame de cima alcançaria — os comandos viajam por
+        outra origem, onde nenhum evento sintético do frame de cima alcançaria: os comandos viajam por
         postMessage até a cópia do content script que roda lá dentro.</p>
       </section>
 
@@ -210,7 +210,7 @@
         const p = document.createElement('p')
         p.innerHTML =
           i % 5 === 0
-            ? `<span class="marker">— linha ${i} —</span>`
+            ? `<span class="marker">· linha ${i} ·</span>`
             : `Linha ${i}. Texto de preenchimento para dar altura suficiente e permitir observar a inércia da rolagem depois que o gesto termina.`
         scrollbox.appendChild(p)
       }

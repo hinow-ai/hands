@@ -1,0 +1,1 @@
+Hand tracking. Video frames are analysed on the user's machine and discarded immediately; no image is stored or transmitted. The camera is only active while the extension is switched on.

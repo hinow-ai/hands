@@ -99,7 +99,7 @@ async function main() {
   row('com tudo ligado', `${Math.ceil(full * 2)} px`)
   console.log()
 
-  console.log('Ganho adaptativo — mesmo gesto de mão, velocidades diferentes')
+  console.log('Ganho adaptativo: mesmo gesto de mão, velocidades diferentes')
   const slow = travel(PointerMapper, 40)
   const medium = travel(PointerMapper, 10)
   const fast = travel(PointerMapper, 3)

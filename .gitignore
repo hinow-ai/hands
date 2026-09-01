@@ -2,3 +2,23 @@ node_modules/
 dist/
 models/
 *.log
+
+# Espaço de trabalho do Claude Code (worktrees temporários), não do produto.
+.claude/
+
+# O pacote da loja é gerado por `npm run package`; os textos, a política de
+# privacidade e as capturas em store/ são fonte e ficam versionados.
+store/*.zip
+
+# Fotos dos casos de uso do site hands.hinow.ai. Ficam nesta pasta só porque foi
+# onde chegaram; a extensão não as usa e o build não as copia para dist/. São
+# 12 MB que pesariam no repositório sem servir a ele, e as versões em WebP que o
+# site publica vivem em HINOW/hands/assets.
+public/clicks.png
+public/control_pc.png
+public/exposition.png
+public/lesson.png
+public/medical.png
+public/palco.png
+# Sobra de arte antiga na raiz, substituída por public/img/.
+/hands.png

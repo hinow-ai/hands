@@ -1,0 +1,57 @@
+Browse the web with your hands.
+
+hands.hinow.ai turns your webcam into the pointer. Scroll a page, step through
+its links and click them using a few plain hand poses. No mouse, no keyboard,
+no touchscreen. There is nothing to hold and nothing to aim at.
+
+WHO IT IS FOR
+
+It is built first for people who cannot comfortably use a mouse: limited hand
+mobility, tremor, reduced strength or reach. Pointing at a small target and
+holding still is the hardest thing an interface can ask for, and this extension
+removes that task entirely: the selection steps from link to link instead.
+
+It turns out to serve anyone whose hands are busy or far from the desk as well:
+a speaker driving slides from across the stage, a teacher at the whiteboard,
+someone cooking with the recipe on screen.
+
+HOW IT WORKS
+
+One hand scrolls the page:
+• Open hand: scroll down
+• Index finger up: scroll up
+• Index finger to the side: next link
+• Closed fist: stop everything
+
+The other hand picks and clicks, without aiming:
+• Open hand: select the next link
+• Index finger to the side: go back to the previous link
+• Index finger up, held 2 seconds: click the selected link
+• Closed fist: stop everything
+
+Both hands together change page: hold one hand open and point the other to the
+left or right for one second.
+
+A closed fist on either hand freezes everything, and the easiest pose to make is
+the one that stops the system.
+
+There is a left-handed mode, so the hand that picks and clicks is your dominant
+one. On-screen panels show every gesture and light up the one being recognized,
+so you always know whether the camera understood you. Light and dark themes.
+
+PRIVACY
+
+Everything runs on your own machine. The camera image is read locally and
+thrown away frame by frame: no video is recorded, uploaded or sent anywhere,
+and the extension makes no network requests at all. The hand-tracking model
+ships inside the extension, so it works with no internet connection.
+
+The camera only runs while the extension is switched on.
+
+FREE AND OPEN SOURCE
+
+Source code: https://github.com/hinow-ai/hands
+Website: https://hands.hinow.ai
+
+This is a beta. Gestures are being added one at a time, and each one only ships
+after it works reliably.

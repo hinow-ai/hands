@@ -1,0 +1,1 @@
+Gestures are delivered only to the tab the user is actually looking at. The extension needs to know which tab is active in order to route recognized gestures to it, and to stop sending them when the user switches away.

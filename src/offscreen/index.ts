@@ -15,6 +15,7 @@
 import { FilesetResolver, HandLandmarker, HandLandmarkerResult } from '@mediapipe/tasks-vision'
 import { GestureRecognizer } from '../core/gestures'
 import { buildHandModel, Vec3 } from '../core/handModel'
+import { HandAssigner, HandObservation } from '../core/handedness'
 import { CameraStatus, FrameSnapshot, HandSnapshot, RuntimeMessage } from '../core/wire'
 
 const TARGET_FPS = 30
@@ -32,6 +33,7 @@ let lastVideoTime = -1
 let monotonicTimestamp = 0
 
 const recognizer = new GestureRecognizer()
+const assigner = new HandAssigner()
 
 function report(status: CameraStatus, error?: string): void {
   const message: RuntimeMessage = { type: 'GN_CAMERA_STATUS', status, error }
@@ -49,11 +51,11 @@ async function createLandmarker(): Promise<HandLandmarker> {
       delegate: 'GPU' as const,
     },
     runningMode: 'VIDEO' as const,
-    // Uma mão: o vocabulário atual tem um só comando, e pedir duas dobra o
-    // custo de inferência e abre a porta para o defeito clássico do MediaPipe
-    // de detectar a mesma mão duas vezes — uma como Left, outra como Right —
-    // criando uma segunda mão fantasma num gesto qualquer.
-    numHands: 1,
+    // Duas mãos: cada uma tem um papel fixo (a esquerda rola, a direita
+    // clica). O papel é atribuído pela posição no quadro (HandAssigner), não
+    // pelo rótulo do modelo — e é lá que a mão fantasma do MediaPipe (a mesma
+    // mão detectada em dobro) também é removida.
+    numHands: 2,
     minHandDetectionConfidence: 0.5,
     minHandPresenceConfidence: 0.5,
     minTrackingConfidence: 0.5,
@@ -70,7 +72,7 @@ async function createLandmarker(): Promise<HandLandmarker> {
     // Este aviso é esperado e não indica falha: quem falha de verdade aparece
     // como erro no `start()`. Dizê-lo aqui evita que o ruído no console seja
     // confundido com a causa de a extensão não ligar.
-    console.info('[gesture-nav] sem WebGL no documento offscreen — caindo para CPU (normal):', err)
+    console.info('[gesture-nav] sem WebGL no documento offscreen, caindo para CPU (normal):', err)
     const cpu = await HandLandmarker.createFromOptions(vision, {
       ...options,
       baseOptions: { ...options.baseOptions, delegate: 'CPU' as const },
@@ -85,12 +87,22 @@ async function createLandmarker(): Promise<HandLandmarker> {
  *
  * Dois ajustes acontecem aqui. Os landmarks são espelhados no eixo X porque a
  * pessoa se vê espelhada e espera que mover a mão para a direita mova o cursor
- * para a direita. E o rótulo da mão é invertido: o modelo classifica assumindo
- * uma imagem não espelhada, então o que ele chama de "Left" é a mão direita de
- * quem está na frente da câmera.
+ * para a direita. E o rótulo do modelo vira só um palpite: quem decide o papel
+ * de cada mão é o `HandAssigner`, pela posição dela em relação ao corpo.
+ *
+ * O rótulo é usado como vem: na Tasks API o "Left"/"Right" já se refere à mão
+ * da pessoa para a imagem crua que entregamos. A recomendação de trocar o
+ * rótulo valia para a solução legada, que assumia entrada espelhada — uma
+ * troca aplicada aqui invertia os papéis sempre que uma mão estava sozinha no
+ * quadro, confirmado em teste real.
  */
 function toSnapshot(result: HandLandmarkerResult, timestamp: number): FrameSnapshot {
-  const models = []
+  const detections: {
+    mirrored: Vec3[]
+    world: Vec3[] | null
+    score: number
+  }[] = []
+  const observations: HandObservation[] = []
 
   for (let i = 0; i < result.landmarks.length; i++) {
     const raw = result.landmarks[i]
@@ -101,9 +113,26 @@ function toSnapshot(result: HandLandmarkerResult, timestamp: number): FrameSnaps
     const world: Vec3[] | null =
       result.worldLandmarks?.[i]?.map((p) => ({ x: -p.x, y: p.y, z: p.z ?? 0 })) ?? null
 
-    const handedness: 'left' | 'right' = category.categoryName === 'Left' ? 'right' : 'left'
-    models.push(buildHandModel(mirrored, world, handedness, category.score ?? 1))
+    const modelLabel: 'left' | 'right' = category.categoryName === 'Left' ? 'left' : 'right'
+    const score = category.score ?? 1
+
+    detections.push({ mirrored, world, score })
+    observations.push({
+      // Mesmos quatro pontos do palmCenter do HandModel: pulso e três bases.
+      center: {
+        x: (mirrored[0].x + mirrored[5].x + mirrored[9].x + mirrored[17].x) / 4,
+        y: (mirrored[0].y + mirrored[5].y + mirrored[9].y + mirrored[17].y) / 4,
+      },
+      modelLabel,
+      score,
+    })
   }
+
+  const models = assigner
+    .assign(observations, timestamp)
+    .map(({ index, hand }) =>
+      buildHandModel(detections[index].mirrored, detections[index].world, hand, detections[index].score),
+    )
 
   const frame = recognizer.process(models, timestamp)
 
@@ -214,6 +243,7 @@ async function start(): Promise<void> {
   }
 
   recognizer.reset()
+  assigner.reset()
   lastVideoTime = -1
   running = true
   report('running')
@@ -233,6 +263,7 @@ function stop(): void {
     video.srcObject = null
   }
   recognizer.reset()
+  assigner.reset()
   report('off')
 }
 

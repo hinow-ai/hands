@@ -1,0 +1,38 @@
+CAMPOS DA FICHA: hands.hinow.ai
+=================================
+
+Um arquivo por campo. Abra, selecione tudo (Ctrl+A), copie (Ctrl+C) e cole no
+painel. Os que começam com "pt-" são para a ficha em português, adicionada
+depois em Additional languages.
+
+Store listing
+  01-nome.txt ................ Name
+  02-descricao-curta.txt ..... Short description (122 de 132 caracteres)
+  03-descricao.txt ........... Description
+  Categoria: Accessibility
+
+Privacy practices
+  04-proposito-unico.txt ..... Single purpose
+  05-permissao-all-urls.txt .. justificativa de <all_urls>
+  06-permissao-tabs.txt ...... justificativa de tabs
+  07-permissao-activetab.txt . justificativa de activeTab
+  08-permissao-scripting.txt . justificativa de scripting
+  09-permissao-storage.txt ... justificativa de storage
+  10-permissao-offscreen.txt . justificativa de offscreen
+  11-permissao-camera.txt .... justificativa da câmera
+  12-url-privacidade.txt ..... Privacy policy URL
+  Coleta de dados: NÃO marque nenhuma categoria, porque a extensão não coleta nada.
+  Marque as três declarações de conformidade no fim.
+
+Imagens (na pasta acima, store/)
+  store-icon-128.png ............ ícone 128x128
+  screenshots/*.png ............. quatro capturas 1280x800
+  promo-tile-440x280.png ........ bloco promocional pequeno
+  promo-marquee-1400x560.png .... letreiro
+
+Pacote
+  hands-hinow-ai-0.1.1.zip
+
+ANTES DE ENVIAR: publique store/privacy-policy.md em
+https://hands.hinow.ai/privacy (a loja recusa extensão com câmera sem uma
+URL de política acessível).

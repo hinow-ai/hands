@@ -11,6 +11,7 @@
  */
 
 import { build } from 'esbuild'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
@@ -28,7 +29,7 @@ function check(name, condition, detail = '') {
     passed++
   } else {
     failed++
-    failures.push(`${name}${detail ? ` — ${detail}` : ''}`)
+    failures.push(`${name}${detail ? `: ${detail}` : ''}`)
   }
 }
 
@@ -43,7 +44,9 @@ async function loadCore() {
     `export * from '${join(root, 'src/core/handModel').replace(/\\/g, '/')}'
      export * from '${join(root, 'src/core/gestures').replace(/\\/g, '/')}'
      export * from '${join(root, 'src/core/filters').replace(/\\/g, '/')}'
-     export * from '${join(root, 'src/core/pointer').replace(/\\/g, '/')}'`,
+     export * from '${join(root, 'src/core/pointer').replace(/\\/g, '/')}'
+     export * from '${join(root, 'src/core/handedness').replace(/\\/g, '/')}'
+     export * from '${join(root, 'src/core/spatial').replace(/\\/g, '/')}'`,
   )
 
   await build({
@@ -122,7 +125,7 @@ async function main() {
     check(
       `pose "${label}" estável sob rotação`,
       ok === angles.length,
-      `${ok}/${angles.length} ângulos corretos — falhou em ${wrong.join(', ')}`,
+      `${ok}/${angles.length} ângulos corretos, falhou em ${wrong.join(', ')}`,
     )
   }
 
@@ -144,7 +147,7 @@ async function main() {
     check(
       `pose "${label}" estável sob escala`,
       ok === scales.length,
-      `${ok}/${scales.length} escalas corretas — falhou em ${wrong.join(', ')}`,
+      `${ok}/${scales.length} escalas corretas, falhou em ${wrong.join(', ')}`,
     )
   }
 
@@ -201,6 +204,58 @@ async function main() {
     check('confirma na 3ª amostra', s.value === 'a')
     s.update('b')
     check('valor confirmado resiste a um frame espúrio', s.value === 'a')
+  }
+
+  // ---------------------------------------------------- mediana mata-picos
+
+  // Câmera ruim produz interferência como picos isolados: o landmark salta
+  // dezenas de pixels por UM frame. O One Euro deixa o pico passar (parece
+  // velocidade); a mediana o elimina por construção.
+  {
+    const { MedianFilter } = mod
+    const m = new MedianFilter()
+    m.filter(100)
+    m.filter(100)
+    const spiked = m.filter(160)
+    check('mediana descarta um pico isolado', spiked === 100, `veio ${spiked}`)
+    const after = m.filter(100)
+    check('depois do pico a saída continua no valor real', after === 100, `veio ${after}`)
+
+    // Movimento real se sustenta por várias amostras e passa, com uma amostra
+    // de atraso — que é o preço, e é imperceptível.
+    const m2 = new MedianFilter()
+    m2.filter(100)
+    m2.filter(120)
+    const ramp = m2.filter(140)
+    check('movimento sustentado atravessa a mediana', ramp === 120, `veio ${ramp}`)
+  }
+
+  // O mesmo pico, agora no mapeador completo: parado em um ponto, um frame de
+  // interferência não pode mexer o cursor de forma perceptível.
+  {
+    const viewport = { width: 1920, height: 1080 }
+    const mapper = new (mod.PointerMapper)()
+    let t = 0
+    for (let i = 0; i < 30; i++) {
+      t += 33
+      mapper.update({ x: 0.5, y: 0.5 }, t, viewport)
+      mapper.render(t)
+    }
+    const before = mapper.position.x
+
+    t += 33
+    mapper.update({ x: 0.55, y: 0.5 }, t, viewport) // pico de ~175px na tela
+    for (let i = 0; i < 3; i++) mapper.render(t + i * 16)
+    t += 33
+    mapper.update({ x: 0.5, y: 0.5 }, t, viewport)
+    for (let i = 0; i < 30; i++) mapper.render(t + i * 16)
+
+    const deviation = Math.abs(mapper.position.x - before)
+    check(
+      'um frame de interferência não desloca o cursor',
+      deviation < 3,
+      `desviou ${deviation.toFixed(1)}px para um pico de ~175px`,
+    )
   }
 
   // ---------------------------------------------------- One Euro
@@ -319,6 +374,15 @@ async function main() {
       `amplitude ${(rawSpread * 1000).toFixed(2)} -> ${(stableSpread * 1000).toFixed(2)} (milésimos de quadro)`,
     )
 
+    // Com o dedo claramente dobrado a projeção não vale — o eixo das juntas
+    // internas não aponta para onde a ponta está — e a saída deve ser a ponta
+    // crua, sem mistura nenhuma.
+    const bent = buildHandModel(makeHand({ ...POSES.point, index: 0.5 }), null, 'right', 1)
+    check(
+      'dedo dobrado desliga a estabilização por completo',
+      bent.stableIndexTip.x === bent.indexTip.x && bent.stableIndexTip.y === bent.indexTip.y,
+    )
+
     // A estabilização não pode custar a capacidade de apontar: o ponto ainda
     // precisa acompanhar o dedo quando ele realmente se move.
     const left = buildHandModel(makeHand({ ...POSES.point, center: { x: 0.35, y: 0.5 } }), null, 'right', 1)
@@ -347,6 +411,13 @@ async function main() {
         const nx = from + ((to - from) * i) / steps
         mapper.update({ x: nx, y: 0.5 }, t, viewport)
       }
+      // A mão fica na posição final e o rastreador continua amostrando, como
+      // no uso real. Sem isto a mediana nunca vê a última posição se
+      // sustentar e o fim do gesto seria descartado como se fosse um pico.
+      for (let i = 0; i < 10; i++) {
+        t += msPerStep
+        mapper.update({ x: to, y: 0.5 }, t, viewport)
+      }
       // Deixa a interpolação visual alcançar o alvo.
       for (let i = 0; i < 90; i++) mapper.render(t + i * 16)
       return { start, end: mapper.position.x }
@@ -367,7 +438,7 @@ async function main() {
     check(
       'movimento lento ainda avança',
       slowTravel > 5,
-      `${slowTravel.toFixed(0)}px — precisão não pode virar paralisia`,
+      `${slowTravel.toFixed(0)}px, precisão não pode virar paralisia`,
     )
 
     // Ruído puro com a mão parada: é o que determina se dá para acertar um
@@ -458,42 +529,139 @@ async function main() {
 
   // ---------------------------------------------------- comandos ativos
 
-  // A lista é a fonte única: o guia na tela é montado a partir dela e o
+  // As listas são a fonte única: o guia na tela é montado a partir delas e o
   // controlador acende os `id`s daqui. Um comando que existe num lugar e não
   // no outro não quebra a compilação nem o runtime — só deixa de funcionar em
   // silêncio, ou vira uma linha na tela que nunca acende.
   {
-    const { COMMANDS } = mod
-    const ids = COMMANDS.map((c) => c.id)
+    const { COMMANDS_SCROLL, COMMANDS_ACTION, COMMANDS_BOTH } = mod
+    const ALL = [...COMMANDS_SCROLL, ...COMMANDS_ACTION, ...COMMANDS_BOTH]
+    const ids = ALL.map((c) => c.id)
 
     check(
-      'o vocabulário ativo é um comando e o gesto que o encerra',
-      JSON.stringify(ids) === JSON.stringify(['scroll_down', 'stop']),
+      'um papel rola e para; o outro escolhe e clica; os dois trocam de página',
+      JSON.stringify(ids) ===
+        JSON.stringify([
+          'scroll_down',
+          'scroll_up',
+          'next_link',
+          'stop',
+          'next_link',
+          'prev_link',
+          'click',
+          'rest',
+          'page_next',
+          'page_prev',
+        ]),
       ids.join(', '),
     )
-    check('nenhum id se repete', new Set(ids).size === ids.length)
-    for (const entry of COMMANDS) {
+    // `next_link` existe nos dois papéis de propósito — dois caminhos motores
+    // para a ação mais frequente. Dentro de um papel, nada se repete.
+    const scrollIds = COMMANDS_SCROLL.map((c) => c.id)
+    const actionIds = COMMANDS_ACTION.map((c) => c.id)
+    check(
+      'nenhum id se repete dentro do mesmo papel',
+      new Set(scrollIds).size === scrollIds.length && new Set(actionIds).size === actionIds.length,
+    )
+    // `art` precisa nomear um dos quatro desenhos existentes: um id errado não
+    // quebra nada em tempo de execução — a máscara simplesmente não carrega e
+    // a linha aparece sem ícone, que é o tipo de defeito que ninguém nota até
+    // alguém abrir o painel.
+    const ART = ['open', 'fist', 'point', 'side']
+    for (const entry of ALL) {
       check(
         `comando "${entry.action}" está completo`,
-        Boolean(entry.icon && entry.action && entry.fingers),
+        Boolean(entry.art && entry.action && entry.fingers),
+      )
+      check(`comando "${entry.action}" usa uma arte existente`, ART.includes(entry.art), entry.art)
+    }
+
+    // E o arquivo precisa estar no pacote: o nome pode ser válido e a arte
+    // ainda assim faltar, se alguém esquecer de rodar `npm run art`.
+    for (const art of new Set(ALL.map((c) => c.art))) {
+      check(
+        `a arte "${art}" existe em public/img`,
+        existsSync(join(root, `public/img/hand-${art}.png`)),
+      )
+    }
+    check('o logo existe em public/img', existsSync(join(root, 'public/img/logo.png')))
+
+    // ------------------------------------------------ traduções
+    //
+    // `action` e `fingers` são chaves, não texto. Uma chave sem tradução não
+    // quebra nada: `chrome.i18n.getMessage` devolve string vazia e a linha
+    // aparece com o nome cru da chave — defeito silencioso, visível só para
+    // quem abre o painel naquele idioma. E os dois idiomas precisam cobrir o
+    // mesmo conjunto, senão quem usa a tradução vê metade em inglês.
+    const locales = {}
+    for (const lang of ['en', 'pt_BR']) {
+      const file = join(root, `public/_locales/${lang}/messages.json`)
+      check(`o idioma ${lang} existe`, existsSync(file))
+      if (existsSync(file)) locales[lang] = JSON.parse(readFileSync(file, 'utf8'))
+    }
+
+    if (locales.en && locales.pt_BR) {
+      for (const entry of ALL) {
+        for (const key of [entry.action, entry.fingers]) {
+          check(
+            `a chave "${key}" está traduzida nos dois idiomas`,
+            Boolean(locales.en[key]?.message) && Boolean(locales.pt_BR[key]?.message),
+          )
+        }
+      }
+
+      const onlyEn = Object.keys(locales.en).filter((k) => !(k in locales.pt_BR))
+      const onlyPt = Object.keys(locales.pt_BR).filter((k) => !(k in locales.en))
+      check(
+        'os dois idiomas cobrem exatamente as mesmas chaves',
+        onlyEn.length === 0 && onlyPt.length === 0,
+        `só em en: ${onlyEn.join(', ') || 'nenhuma'} · só em pt_BR: ${onlyPt.join(', ') || 'nenhuma'}`,
       )
     }
 
-    // As poses do comando e do parar precisam ser as duas mais separáveis do
+    // As poses de rolar e parar precisam ser as duas mais separáveis do
     // motor: aberta (>=4 dedos) e punho (0 dedos), com a zona morta no meio.
     const openFrame = settle(new GestureRecognizer(), buildHandModel, makeHand({ ...POSES.open }))
     const fistFrame = settle(new GestureRecognizer(), buildHandModel, makeHand({ ...POSES.fist }))
-    check('mão aberta é o gesto do comando', openFrame.right?.gesture === 'open')
+    check('mão aberta é o gesto de rolar', openFrame.right?.gesture === 'open')
     check('punho é o gesto de parar', fistFrame.right?.gesture === 'fist')
+
+    // O apontar natural não dobra o anelar por completo — ele compartilha
+    // tendão com o médio. A classificação precisa aceitar a zona intermediária
+    // (nem esticado, nem dobrado), senão a pose real de quase todo mundo cai
+    // em 'idle' e o clique por permanência nunca arma.
+    const relaxed = settle(
+      new GestureRecognizer(),
+      buildHandModel,
+      makeHand({ ...POSES.point, ring: 0.45 }),
+    )
+    check(
+      'apontar tolera o anelar a meio caminho',
+      relaxed.right?.gesture === 'point',
+      `veio ${relaxed.right?.gesture}`,
+    )
+
+    // O rolar para cima da esquerda: a pose de apontar com o dedo vertical
+    // precisa chegar como 'point' + direção 'up' também na mão esquerda.
+    const leftUp = settle(
+      new GestureRecognizer(),
+      buildHandModel,
+      makeHand({ ...POSES.point, side: 'left' }),
+      'left',
+    )
+    check(
+      'esquerda apontando para cima é point + up',
+      leftUp.left?.gesture === 'point' && leftUp.left?.pointDirection === 'up',
+      `veio ${leftUp.left?.gesture}/${leftUp.left?.pointDirection}`,
+    )
   }
 
   // ---------------------------------------------------- direção do apontar
 
-  // A direção do indicador sai do vocabulário ativo por ora, mas continua no
-  // motor para voltar com a rolagem direcional. É medida pelo eixo do dedo:
-  // precisa responder cima e baixo, e precisa RECUSAR o que não é nem um nem
-  // outro: um dedo apontando de lado que oscilasse entre cima e baixo rolaria a
-  // página sozinho, que é a pior falha possível aqui.
+  // A direção do indicador discrimina comandos: para cima rola (esquerda) e
+  // clica (direita), para o lado volta um link. É medida pelo eixo do dedo, e
+  // a diagonal precisa ser RECUSADA: é a banda morta entre "cima" e "lado"
+  // que impede um clique de virar um voltar no meio do caminho.
   {
     // Um reconhecedor por medida: a direção é confirmada ao longo de vários
     // frames, e reaproveitar o estado faria uma medição contaminar a seguinte.
@@ -514,15 +682,114 @@ async function main() {
       `veio ${dirAt(Math.PI)}`,
     )
     check(
-      'indicador na horizontal não vira direção',
-      dirAt(Math.PI / 2) === null,
+      'indicador deitado para a direita é lido como direita',
+      dirAt(Math.PI / 2) === 'right',
       `veio ${dirAt(Math.PI / 2)}`,
     )
     check(
-      'indicador na horizontal para o outro lado também não',
-      dirAt(-Math.PI / 2) === null,
+      'indicador deitado para a esquerda é lido como esquerda',
+      dirAt(-Math.PI / 2) === 'left',
       `veio ${dirAt(-Math.PI / 2)}`,
     )
+    check(
+      'diagonal fica na banda morta, sem direção',
+      dirAt(Math.PI / 4) === null,
+      `veio ${dirAt(Math.PI / 4)}`,
+    )
+  }
+
+  // ---------------------------------------------------- atribuição de mãos
+
+  // O rótulo esquerda/direita do modelo erra com frequência, e com papéis
+  // fixos por mão um rótulo trocado inverte os comandos da pessoa. A posição
+  // no quadro decide; o rótulo é só o palpite inicial de uma mão sozinha.
+  {
+    const { HandAssigner } = mod
+    const obs = (x, modelLabel, score = 1) => ({ center: { x, y: 0.5 }, modelLabel, score })
+
+    // Duas mãos com os rótulos do modelo TROCADOS: a geometria corrige.
+    const a = new HandAssigner()
+    const swapped = a.assign([obs(0.7, 'left'), obs(0.3, 'right')], 0)
+    const byIndex = new Map(swapped.map((r) => [r.index, r.hand]))
+    check(
+      'com duas mãos, a posição corrige o rótulo do modelo',
+      byIndex.get(0) === 'right' && byIndex.get(1) === 'left',
+      swapped.map((r) => `${r.index}:${r.hand}`).join(', '),
+    )
+
+    // A direita cruza o centro do quadro para mirar à esquerda da tela e a
+    // outra mão some: o papel precisa sobreviver pela continuidade.
+    const b = new HandAssigner()
+    b.assign([obs(0.25, 'left'), obs(0.6, 'right')], 0)
+    let single
+    for (let i = 1; i <= 6; i++) {
+      single = b.assign([obs(0.6 - i * 0.04, 'left')], i * 33)
+    }
+    check(
+      'mão sozinha que cruza o centro mantém o papel',
+      single[0]?.hand === 'right',
+      `veio ${single[0]?.hand}`,
+    )
+
+    // Mão nova, sem histórico: o rótulo do modelo é o único indício.
+    const c = new HandAssigner()
+    const fresh = c.assign([obs(0.5, 'left')], 0)
+    check('mão nova usa o rótulo do modelo', fresh[0]?.hand === 'left', `veio ${fresh[0]?.hand}`)
+
+    // Mão fantasma: a mesma mão detectada em dobro, quase no mesmo lugar,
+    // não pode virar uma segunda mão comandando outra coisa.
+    const d = new HandAssigner()
+    const ghost = d.assign([obs(0.5, 'right', 0.9), obs(0.53, 'left', 0.6)], 0)
+    check(
+      'detecção em dobro vira uma mão só, a de maior confiança',
+      ghost.length === 1 && ghost[0].index === 0,
+      ghost.map((r) => `${r.index}:${r.hand}`).join(', '),
+    )
+  }
+
+  // ---------------------------------------------------- pulo direcional
+
+  // O empurrão da mão move a seleção para o alvo vizinho na direção. A
+  // escolha precisa preferir alinhado e perto, e RECUSAR o que está de lado:
+  // empurrar para a direita não pode pular para um link lá de cima.
+  {
+    const { pickInDirection, quantizeDirection } = mod
+    const r = (left, top, width = 80, height = 24) => ({ left, top, width, height })
+
+    const from = r(100, 100)
+    const rightNear = r(220, 102)
+    const rightFar = r(500, 100)
+    const below = r(100, 170)
+    const wayUp = r(110, -180)
+
+    const candidates = [rightFar, below, rightNear, wayUp]
+    check(
+      'empurrar para a direita escolhe o vizinho alinhado mais próximo',
+      pickInDirection(from, candidates, 'right') === 2,
+      `veio índice ${pickInDirection(from, candidates, 'right')}`,
+    )
+    check(
+      'empurrar para baixo escolhe o de baixo',
+      pickInDirection(from, candidates, 'down') === 1,
+      `veio índice ${pickInDirection(from, candidates, 'down')}`,
+    )
+    check(
+      'sem candidato na direção, não pula',
+      pickInDirection(from, [wayUp], 'down') === -1,
+    )
+    check(
+      'candidato muito de lado fica fora do cone',
+      pickInDirection(from, [r(140, 500)], 'right') === -1,
+      'um link 400px abaixo não é "à direita"',
+    )
+    check(
+      'vizinho alinhado longe ganha de desalinhado perto',
+      pickInDirection(r(100, 100), [r(400, 104), r(180, 240)], 'right') === 0,
+    )
+
+    check('empurrão dominante à direita quantiza como direita', quantizeDirection(60, -10) === 'right')
+    check('empurrão dominante para baixo quantiza como baixo', quantizeDirection(15, 70) === 'down')
+    check('empurrão dominante para cima quantiza como cima', quantizeDirection(-5, -50) === 'up')
   }
 
   await cleanup()

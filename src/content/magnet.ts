@@ -20,9 +20,23 @@
 
 import { damp } from '../core/filters'
 import { deepElementFromPoint } from './synth'
+import { INTERACTIVE, MAX_TARGET_HEIGHT, MAX_TARGET_WIDTH } from './targets'
 
 /** Distância máxima, em pixels, a que um alvo ainda atrai. */
 const RADIUS = 30
+
+/**
+ * Raios sondados. Um único anel deixa buracos: um botão pequeno no meio do
+ * caminho cai entre dois pontos de sonda e escapa. O anel interno fecha isso.
+ */
+const PROBE_RADII = [15, RADIUS]
+
+/**
+ * Vantagem do alvo já grudado. Outro candidato só o substitui se estiver
+ * claramente mais perto — sem isso, dois links vizinhos a distâncias parecidas
+ * fazem o cursor alternar entre eles a cada sondagem.
+ */
+const STICKINESS = 0.65
 
 /**
  * Fração máxima do caminho até o alvo percorrida pela atração.
@@ -35,14 +49,11 @@ const RADIUS = 30
  */
 const MAX_PULL = 0.95
 
-/** Pontos sondados no círculo ao redor do cursor. */
+/** Pontos sondados em cada anel ao redor do cursor. */
 const PROBES = 10
 
 /** A sondagem roda a cada N frames; 60fps não exige 60 varreduras por segundo. */
 const PROBE_INTERVAL = 3
-
-const INTERACTIVE =
-  'a[href], button, input, select, textarea, summary, label, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="radio"], [onclick]'
 
 /**
  * Contextos em que a posição livre importa mais que acertar um controle.
@@ -97,25 +108,38 @@ export class Magnet {
     let best: Element | null = null
     let bestDistance = Infinity
 
-    for (let i = 0; i < PROBES; i++) {
-      const angle = (i / PROBES) * Math.PI * 2
-      const px = x + Math.cos(angle) * RADIUS
-      const py = y + Math.sin(angle) * RADIUS
-
-      const el = deepElementFromPoint(px, py)
-      const candidate = el?.closest?.(INTERACTIVE)
-      if (!candidate) continue
-
-      // Um alvo enorme — um <a> envolvendo um bloco inteiro — não deve atrair:
-      // o cursor já estaria dentro dele se fosse a intenção, e puxá-lo para a
-      // borda mais próxima só desviaria o movimento.
-      const rect = candidate.getBoundingClientRect()
-      if (rect.width > 400 || rect.height > 260) continue
-
+    // O alvo atual entra na disputa com vantagem (STICKINESS): um vizinho só
+    // o rouba se estiver claramente mais perto, senão a seleção oscila.
+    if (this.targetEl?.isConnected) {
+      const rect = this.targetEl.getBoundingClientRect()
       const { distance } = Magnet.closestPoint(rect, x, y)
-      if (distance < bestDistance) {
-        bestDistance = distance
-        best = candidate
+      if (distance < RADIUS) {
+        best = this.targetEl
+        bestDistance = distance * STICKINESS
+      }
+    }
+
+    for (const radius of PROBE_RADII) {
+      for (let i = 0; i < PROBES; i++) {
+        const angle = (i / PROBES) * Math.PI * 2
+        const px = x + Math.cos(angle) * radius
+        const py = y + Math.sin(angle) * radius
+
+        const el = deepElementFromPoint(px, py)
+        const candidate = el?.closest?.(INTERACTIVE)
+        if (!candidate || candidate === best) continue
+
+        // Um alvo enorme — um <a> envolvendo um bloco inteiro — não deve atrair:
+        // o cursor já estaria dentro dele se fosse a intenção, e puxá-lo para a
+        // borda mais próxima só desviaria o movimento.
+        const rect = candidate.getBoundingClientRect()
+        if (rect.width > MAX_TARGET_WIDTH || rect.height > MAX_TARGET_HEIGHT) continue
+
+        const { distance } = Magnet.closestPoint(rect, x, y)
+        if (distance < bestDistance) {
+          bestDistance = distance
+          best = candidate
+        }
       }
     }
 
@@ -185,6 +209,11 @@ export class Magnet {
       y: y + this.offsetY,
       target: this.target ? this.targetEl : null,
     }
+  }
+
+  /** Alvo em que a atração está grudada agora, se algum. */
+  get currentTarget(): Element | null {
+    return this.target ? this.targetEl : null
   }
 
   reset(): void {

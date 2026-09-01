@@ -1,0 +1,1 @@
+Used together with scripting to reach the page the user is on when the extension is switched on.

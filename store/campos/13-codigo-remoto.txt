@@ -1,0 +1,5 @@
+No. Everything the extension executes ships inside the package. All JavaScript is bundled at build time; the hand-tracking model (hand_landmarker.task) and the MediaPipe WebAssembly runtime are files inside the extension, loaded through chrome.runtime.getURL. There is no CDN, no remote script tag, no dynamic import from a remote origin, and no eval of fetched strings.
+
+The 'wasm-unsafe-eval' entry in the content security policy is required to compile that bundled WebAssembly module; the binary itself is in the package, not fetched at runtime.
+
+The extension also declares connect-src 'self', so the browser blocks any outbound network request from its pages. It works with no internet connection.

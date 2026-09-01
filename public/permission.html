@@ -1,18 +1,31 @@
 <!doctype html>
-<html lang="pt-BR">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Hands — acesso à câmera</title>
+    <title>hands.hinow.ai</title>
     <style>
-      /* Mesma decisão do popup: claro sempre, sem seguir o tema do sistema. */
+      /* Mesmas variáveis do popup: a página de permissão é a primeira coisa
+         que a pessoa vê do produto, e chegar num visual diferente do painel
+         faz parecer outra coisa. O tema segue o que estiver escolhido. */
       :root {
         color-scheme: light;
         --bg: #ffffff;
         --fg: #16181d;
         --muted: #6b7280;
-        --line: #e5e7eb;
+        --line: #e6e8ec;
+        --card: #f6f7f9;
+        --card-line: #eceef2;
         --accent: #16a34a;
-        --card: #f7f8fa;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #15171c;
+        --fg: #f2f4f7;
+        --muted: #98a1b0;
+        --line: #262a33;
+        --card: #1c1f26;
+        --card-line: #272b34;
+        --accent: #35d38a;
       }
       * { box-sizing: border-box; }
       body {
@@ -20,68 +33,108 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
-        padding: 32px 20px;
+        padding: 40px 20px;
         background: var(--bg);
         color: var(--fg);
-        font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        font: 14px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
       }
-      main { max-width: 460px; }
-      h1 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
-      p { margin: 0 0 14px; color: var(--muted); }
+      main { width: 100%; max-width: 470px; }
+
+      /* O logo é uma máscara pintada por currentColor: o mesmo arquivo serve
+         ao tema claro e ao escuro, sem uma segunda arte invertida. */
+      .logo {
+        width: 208px;
+        height: 47px;
+        background: currentColor;
+        -webkit-mask: url("img/logo.png") no-repeat left center;
+        mask: url("img/logo.png") no-repeat left center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+      }
+
+      h1 {
+        margin: 26px 0 12px;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
+      }
+      p { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; }
+      p b { color: var(--fg); font-weight: 650; }
+
       button {
         appearance: none;
         border: 0;
-        border-radius: 9px;
-        padding: 11px 20px;
-        font: 600 14px inherit;
+        border-radius: 10px;
+        padding: 13px 22px;
+        font: 650 14px inherit;
         color: #fff;
         background: var(--accent);
         cursor: pointer;
+        width: 100%;
+        margin-top: 6px;
       }
-      button[disabled] { opacity: .55; cursor: default; }
+      button[disabled] { opacity: .5; cursor: default; }
+
+      .msg {
+        margin-top: 14px;
+        padding: 11px 14px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .msg.ok { background: var(--card); border: 1px solid var(--card-line); color: var(--accent); }
+      .msg.err { background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.25); color: #dc2626; }
+      :root[data-theme="dark"] .msg.err { color: #f87171; }
+
       .note {
-        margin-top: 18px;
+        margin-top: 14px;
         padding: 12px 14px;
         background: var(--card);
-        border: 1px solid var(--line);
+        border: 1px solid var(--card-line);
         border-radius: 9px;
         font-size: 12.5px;
         color: var(--muted);
       }
-      .msg { margin-top: 16px; font-weight: 600; }
-      .msg.ok { color: var(--accent); }
-      .msg.err { color: #dc2626; }
       code {
         font: 12px ui-monospace, monospace;
-        background: var(--card);
-        border: 1px solid var(--line);
+        background: var(--bg);
+        border: 1px solid var(--card-line);
         border-radius: 4px;
         padding: 1px 5px;
+        color: var(--fg);
       }
+
+      /* A privacidade é o que a pessoa está avaliando ao decidir se concede a
+         câmera: fica logo abaixo do botão, não escondida num rodapé. */
+      footer {
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      footer a { color: var(--fg); text-decoration: none; font-weight: 650; }
+      footer a:hover { text-decoration: underline; }
       [hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <main>
-      <h1>Liberar a câmera para o Hands</h1>
-      <p>
-        O reconhecimento de gestos roda num documento invisível da extensão, e um documento
-        invisível não pode exibir a caixa de permissão do Chrome. Esta página existe só para
-        pedir esse acesso uma única vez — depois vale para todos os sites.
-      </p>
-      <p>
-        Ao clicar, o Chrome pergunta se a extensão pode usar a câmera. Escolha
-        <strong>Permitir</strong>. O vídeo não sai da sua máquina.
-      </p>
+      <div class="logo" role="img" aria-label="hands.hinow.ai"></div>
 
-      <button id="grant">Permitir acesso à câmera</button>
+      <h1 data-i18n="permHeading"></h1>
+      <p data-i18n="permWhy"></p>
+      <p data-i18n-html="permHow"></p>
+
+      <button id="grant" data-i18n="permButton"></button>
       <div class="msg" id="msg" hidden></div>
+      <div class="note" id="blockedHelp" hidden></div>
 
-      <div class="note" id="blockedHelp" hidden>
-        O acesso está <strong>bloqueado</strong> para esta extensão. Para reverter, abra
-        <code>chrome://settings/content/camera</code>, encontre o endereço desta página na lista
-        de bloqueados, remova-o e volte aqui.
-      </div>
+      <footer>
+        <p style="margin: 0 0 9px" data-i18n="permPrivacy"></p>
+        <a href="https://hands.hinow.ai" target="_blank" rel="noreferrer">hands.hinow.ai</a>
+      </footer>
     </main>
     <script type="module" src="permission.js"></script>
   </body>

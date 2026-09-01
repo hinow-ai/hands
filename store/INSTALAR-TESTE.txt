@@ -1,0 +1,136 @@
+hands.hinow.ai: como instalar a versão de teste
+===============================================
+
+Você recebeu um arquivo chamado hands-hinow-ai-0.1.1.zip. Ele contém a extensão
+antes da publicação na Chrome Web Store, então a instalação é manual. Leva menos
+de um minuto e não exige conta em lugar nenhum.
+
+O QUE PRECISA
+  Google Chrome versão 116 ou mais nova, e uma webcam.
+
+PASSO A PASSO
+  1. Descompacte o arquivo numa pasta que possa ficar parada, por exemplo
+     Documentos/hands. Não apague nem mova essa pasta depois: o Chrome carrega a
+     extensão de lá toda vez que abre.
+  2. Abra o Chrome e digite na barra de endereço:  chrome://extensions
+  3. Ligue a chave "Modo do desenvolvedor", no canto superior direito.
+  4. Clique em "Carregar sem compactação" e selecione a pasta que você
+     descompactou, aquela que tem o arquivo manifest.json dentro.
+
+A extensão aparece na lista e o ícone de mão vai para a barra do Chrome. Se não
+aparecer, clique no ícone de peça de quebra-cabeça e fixe hands.hinow.ai.
+
+PRIMEIRO USO
+  1. Abra qualquer site com links.
+  2. Clique no ícone da extensão e depois em "Ligar".
+  3. O Chrome vai pedir acesso à câmera uma única vez, numa aba que a própria
+     extensão abre. Autorize. Essa autorização vale para todos os sites e não
+     precisa ser repetida.
+  4. Mostre as duas mãos para a câmera. Dois painéis aparecem nos cantos da tela
+     com a lista de gestos, e o gesto reconhecido acende.
+
+OS QUATRO GESTOS
+  Mão aberta ............ rola a página, ou vai para o próximo link
+  Indicador para cima ... sobe a página, ou clica se você segurar dois segundos
+  Indicador para o lado . anda de um link para o outro
+  Punho fechado ......... trava tudo, em qualquer das mãos
+
+Uma mão rola a página e a outra escolhe e clica. Qual mão faz o quê você define
+no painel da extensão, e existe modo canhoto. As duas mãos juntas trocam de
+página.
+
+O QUE AJUDA O RECONHECIMENTO
+  Luz uniforme nas mãos. Contraluz forte, como ficar de costas para uma janela,
+  é o que mais atrapalha. A câmera precisa te enquadrar da cintura para cima.
+
+O QUE ESPERAR, E O QUE NÃO
+  Rolar a página, percorrer os links, clicar e trocar de página funcionam hoje
+  em qualquer site aberto no Chrome. Arrastar, ampliar, girar e digitar ainda
+  não existem. O teclado continua necessário para escrever.
+
+AVISOS NORMAIS
+  O Chrome vai mostrar um aviso sobre extensões em modo de desenvolvedor toda
+  vez que abrir. É esperado em instalação manual e some quando a extensão for
+  publicada na loja. Também não há atualização automática nesta forma: para
+  atualizar, apague a pasta antiga, descompacte a nova no mesmo lugar e clique
+  no botão de recarregar dentro de chrome://extensions.
+
+PRIVACIDADE
+  O vídeo da câmera não sai do seu computador. Cada quadro é analisado na
+  própria máquina e descartado, nenhuma imagem é gravada, e a extensão não faz
+  requisição de rede nenhuma. Detalhes em https://hands.hinow.ai
+
+CONTE COMO FOI
+  Estamos em beta e o que você relatar decide qual gesto construímos em seguida.
+  Vale contar o que não foi reconhecido, o que foi reconhecido sem você querer,
+  e em que site emperrou.
+
+
+================================================================================
+
+hands.hinow.ai: installing the test build
+=========================================
+
+You received a file called hands-hinow-ai-0.1.1.zip. It holds the extension
+before it is published on the Chrome Web Store, so installing is manual. It
+takes under a minute and needs no account anywhere.
+
+WHAT YOU NEED
+  Google Chrome 116 or newer, and a webcam.
+
+STEP BY STEP
+  1. Unzip the file into a folder that can stay put, for example
+     Documents/hands. Do not delete or move that folder afterwards: Chrome loads
+     the extension from there every time it starts.
+  2. Open Chrome and type in the address bar:  chrome://extensions
+  3. Turn on "Developer mode", top right.
+  4. Click "Load unpacked" and pick the folder you unzipped, the one with
+     manifest.json inside it.
+
+The extension appears in the list and the hand icon goes to the Chrome toolbar.
+If you do not see it, click the puzzle piece icon and pin hands.hinow.ai.
+
+FIRST RUN
+  1. Open any page with links.
+  2. Click the extension icon, then "Turn on".
+  3. Chrome asks for camera access once, in a tab the extension opens itself.
+     Allow it. That permission counts for every site and is not asked again.
+  4. Show both hands to the camera. Two panels appear in the corners of the
+     screen listing every gesture, and the one being recognised lights up.
+
+THE FOUR POSES
+  Open hand ................. scrolls the page, or moves to the next link
+  Index finger up ........... scrolls up, or clicks if you hold it two seconds
+  Index finger to the side .. steps from one link to the next
+  Closed fist ............... locks everything, on either hand
+
+One hand scrolls, the other picks and clicks. Which hand does what is yours to
+choose in the extension panel, and there is a left-handed mode. Both hands
+together change pages.
+
+WHAT HELPS RECOGNITION
+  Even light on your hands. Strong backlight, such as sitting with a window
+  behind you, is what gets in the way most. The camera has to frame you from the
+  waist up.
+
+WHAT TO EXPECT, AND WHAT NOT TO
+  Scrolling, stepping through links, clicking and changing pages work today on
+  any site open in Chrome. Dragging, zooming, rotating and typing do not exist
+  yet. You still need the keyboard to write.
+
+NORMAL WARNINGS
+  Chrome shows a warning about developer mode extensions every time it starts.
+  That is expected for a manual install and goes away once the extension is
+  published on the store. There is no auto-update this way either: to update,
+  delete the old folder, unzip the new one in the same place and press reload
+  inside chrome://extensions.
+
+PRIVACY
+  Camera video never leaves your computer. Every frame is analysed on your own
+  machine and discarded, no image is stored, and the extension makes no network
+  request at all. Details at https://hands.hinow.ai
+
+TELL US HOW IT WENT
+  We are in open beta and what you report decides which gesture gets built next.
+  Worth reporting: what was not recognised, what was recognised when you did not
+  mean it, and which site it got stuck on.

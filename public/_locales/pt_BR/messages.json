@@ -1,0 +1,281 @@
+{
+  "extName": {
+    "message": "hands.hinow.ai: navegação por gestos"
+  },
+  "extDescription": {
+    "message": "Navegue em qualquer site com as mãos, pela webcam. Role a página, escolha links e clique sem tocar no mouse nem no teclado."
+  },
+  "extActionTitle": {
+    "message": "hands.hinow.ai: ativar navegação por gestos"
+  },
+  "extCommandToggle": {
+    "message": "Ligar/desligar a navegação por gestos"
+  },
+  "handLeft": {
+    "message": "Mão esquerda"
+  },
+  "handRight": {
+    "message": "Mão direita"
+  },
+  "roleScroll": {
+    "message": "rola a página"
+  },
+  "roleAction": {
+    "message": "escolhe e clica"
+  },
+  "bothHands": {
+    "message": "As duas: troca de página"
+  },
+  "cmdScrollDown": {
+    "message": "Rolar para baixo"
+  },
+  "cmdScrollUp": {
+    "message": "Rolar para cima"
+  },
+  "cmdNextLink": {
+    "message": "Próximo link"
+  },
+  "cmdPrevLink": {
+    "message": "Link anterior"
+  },
+  "cmdClick": {
+    "message": "Clicar no selecionado"
+  },
+  "cmdStop": {
+    "message": "Parar tudo"
+  },
+  "poseOpen": {
+    "message": "mão aberta"
+  },
+  "poseFist": {
+    "message": "punho fechado"
+  },
+  "posePointUp": {
+    "message": "indicador para cima"
+  },
+  "poseSide": {
+    "message": "indicador para o lado"
+  },
+  "poseClickHold": {
+    "message": "indicador para cima, 2 s"
+  },
+  "poseStopBoth": {
+    "message": "punho: trava tudo"
+  },
+  "pageNext": {
+    "message": "Próxima página"
+  },
+  "pagePrev": {
+    "message": "Página anterior"
+  },
+  "pageNextPose": {
+    "message": "aberta + dedo à direita, 1s"
+  },
+  "pagePrevPose": {
+    "message": "aberta + dedo à esquerda, 1s"
+  },
+  "guideNow": {
+    "message": "agora"
+  },
+  "statusOff": {
+    "message": "Desligado"
+  },
+  "statusStarting": {
+    "message": "Iniciando a câmera…"
+  },
+  "statusRunning": {
+    "message": "Ativo: mostre as mãos"
+  },
+  "statusDenied": {
+    "message": "Permissão de câmera negada"
+  },
+  "statusError": {
+    "message": "Erro na câmera"
+  },
+  "btnActivate": {
+    "message": "Ativar"
+  },
+  "btnDeactivate": {
+    "message": "Desativar"
+  },
+  "grantText": {
+    "message": "O reconhecimento roda num documento invisível, que não pode exibir a caixa de permissão do Chrome. Libere a câmera uma vez numa aba, e vale para todos os sites."
+  },
+  "grantButton": {
+    "message": "Permitir acesso à câmera"
+  },
+  "setAppearance": {
+    "message": "Aparência"
+  },
+  "setThemeLight": {
+    "message": "Claro"
+  },
+  "setThemeDark": {
+    "message": "Escuro"
+  },
+  "setLeftHanded": {
+    "message": "Modo canhoto"
+  },
+  "setLeftHandedSub": {
+    "message": "Sua esquerda escolhe e clica"
+  },
+  "setInstructions": {
+    "message": "Instruções na tela"
+  },
+  "setInstructionsSub": {
+    "message": "Painéis de gestos nos cantos"
+  },
+  "setHud": {
+    "message": "Painel de estado"
+  },
+  "setHudSub": {
+    "message": "A faixa de estado"
+  },
+  "setTips": {
+    "message": "Pontas dos dedos"
+  },
+  "setTipsSub": {
+    "message": "Diagnóstico do rastreamento"
+  },
+  "setReach": {
+    "message": "Área de alcance"
+  },
+  "setStability": {
+    "message": "Estabilidade do cursor"
+  },
+  "setScrollSpeed": {
+    "message": "Velocidade da rolagem"
+  },
+  "footer": {
+    "message": "Atalho $SHORTCUT$. A câmera roda só enquanto estiver ativo e o vídeo nunca sai do seu computador.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+Shift+G"
+      }
+    }
+  },
+  "hudSearching": {
+    "message": "Procurando as mãos"
+  },
+  "hudSearchingHint": {
+    "message": "Uma mão rola, a outra escolhe e clica"
+  },
+  "hudScrollDown": {
+    "message": "Rolando para baixo"
+  },
+  "hudScrollUp": {
+    "message": "Rolando para cima"
+  },
+  "hudScrollHint": {
+    "message": "Feche essa mão para parar"
+  },
+  "hudPaused": {
+    "message": "Pausado"
+  },
+  "hudPausedHint": {
+    "message": "Punho fechado trava tudo: abra para continuar"
+  },
+  "hudClicking": {
+    "message": "Clicando"
+  },
+  "hudClickingHint": {
+    "message": "Segure o dedo para cima por 2 segundos"
+  },
+  "hudNothingSelected": {
+    "message": "Nada selecionado"
+  },
+  "hudNothingSelectedHint": {
+    "message": "Abra essa mão para escolher um link primeiro"
+  },
+  "hudLinkSelected": {
+    "message": "Link selecionado"
+  },
+  "hudLinkSelectedHint": {
+    "message": "Aberta: próximo · dedo ao lado: volta · dedo p/ cima 2 s: clica"
+  },
+  "hudIdle": {
+    "message": "Parado"
+  },
+  "hudIdleHint": {
+    "message": "Abra essa mão para escolher um link"
+  },
+  "hudPageConfirm": {
+    "message": "Segure as duas mãos para confirmar"
+  },
+  "hudPageChanged": {
+    "message": "Página trocada"
+  },
+  "hudPageChangedHint": {
+    "message": "Solte as mãos para continuar"
+  },
+  "infoButton": {
+    "message": "Sobre o hands.hinow.ai"
+  },
+  "aboutBeta": {
+    "message": "Beta"
+  },
+  "aboutTagline": {
+    "message": "Navegue na web com as mãos."
+  },
+  "aboutWhat": {
+    "message": "A sua webcam vira o ponteiro. Role a página, percorra os links e clique neles com algumas poses simples de mão. Sem mouse, sem teclado, sem tela sensível ao toque. Nada para segurar, nada para acertar."
+  },
+  "aboutWho": {
+    "message": "Foi feito primeiro para quem não consegue usar um mouse com conforto: mobilidade reduzida das mãos, tremor, pouca força ou pouco alcance. E acaba servindo a qualquer um com as mãos ocupadas ou longe da mesa: quem apresenta slides do outro lado do palco, quem dá aula na lousa, quem está com as mãos na massa e a receita na tela."
+  },
+  "aboutPrivacy": {
+    "message": "Tudo roda na sua máquina. A imagem da câmera é lida localmente e descartada quadro a quadro: nenhum vídeo é enviado, gravado ou sai daí."
+  },
+  "aboutFree": {
+    "message": "Gratuito e de código aberto."
+  },
+  "aboutSite": {
+    "message": "Site"
+  },
+  "aboutSource": {
+    "message": "Código-fonte"
+  },
+  "aboutClose": {
+    "message": "Fechar"
+  },
+  "settingsTitle": {
+    "message": "Controles"
+  },
+  "permHeading": {
+    "message": "Libere a câmera, uma vez só"
+  },
+  "permWhy": {
+    "message": "O reconhecimento de gestos roda num documento invisível da extensão, e um documento invisível não pode exibir a caixa de permissão do Chrome. Esta página existe só para pedir esse acesso uma única vez, e depois vale para todos os sites."
+  },
+  "permHow": {
+    "message": "Ao clicar, o Chrome pergunta se a extensão pode usar a câmera. Escolha <b>Permitir</b>."
+  },
+  "permButton": {
+    "message": "Permitir acesso à câmera"
+  },
+  "permGranted": {
+    "message": "Câmera liberada. Pode fechar esta aba e usar os gestos."
+  },
+  "permDenied": {
+    "message": "Acesso negado."
+  },
+  "permNoCamera": {
+    "message": "Nenhuma câmera encontrada neste computador."
+  },
+  "permBusy": {
+    "message": "A câmera existe, mas está em uso por outro programa. Feche-o e tente de novo."
+  },
+  "permFail": {
+    "message": "Falha ao abrir a câmera."
+  },
+  "permBlockedBefore": {
+    "message": "O acesso está bloqueado para esta extensão. Para reverter, abra "
+  },
+  "permBlockedAfter": {
+    "message": ", encontre o endereço desta página na lista de bloqueados, remova-o e volte aqui."
+  },
+  "permPrivacy": {
+    "message": "A imagem é lida na sua própria máquina e descartada quadro a quadro. Nenhum vídeo é gravado, enviado ou sai daí."
+  }
+}

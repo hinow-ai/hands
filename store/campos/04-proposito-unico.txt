@@ -1,0 +1,1 @@
+Let people operate web pages with hand gestures captured by the webcam, as an alternative to a mouse and keyboard.
