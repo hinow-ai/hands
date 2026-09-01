@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "fetch:model": "node scripts/fetch-model.mjs",
     "art": "python3 scripts/prepare-art.py",
+    "art:readme": "python3 scripts/readme-art.py",
     "package": "node scripts/package.mjs",
     "tiles": "python3 scripts/promo-tiles.py",
     "test": "node tests/run.mjs",

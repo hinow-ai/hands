@@ -1,282 +1,368 @@
-# hands.hinow.ai
+<div align="center">
 
-**[hands.hinow.ai](https://hands.hinow.ai)** · código-fonte em
-**[github.com/hinow-ai/hands](https://github.com/hinow-ai/hands)** · beta, gratuito e aberto
+<a href="https://hands.hinow.ai">
+  <img src=".github/banner.png" alt="hands.hinow.ai: browse the web with your hands" width="100%">
+</a>
 
-Controle a navegação de **qualquer site** com as mãos, pela webcam. Extensão Chrome (MV3).
+<p>
+  <a href="https://hands.hinow.ai"><strong>hands.hinow.ai</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://hands.hinow.ai/beta/">Install the test build</a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://www.hinow.ai/privacy">Privacy</a>
+</p>
 
-**Para quem é.** Primeiro para quem não consegue usar um mouse com conforto: mobilidade
-reduzida das mãos, tremor, pouca força ou pouco alcance. E, por tabela, para qualquer um com
-as mãos ocupadas ou longe da mesa: quem apresenta slides do outro lado do palco, quem dá
-aula na lousa, quem está com as mãos na massa e a receita na tela.
+<p>
+  <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome-116%2B-1a73e8">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.1--beta-6f42c1">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT%20%2B%20attribution-0f9d58">
+  <img alt="Video stays local" src="https://img.shields.io/badge/video-never%20leaves%20your%20machine-111">
+</p>
 
-**O que já faz.** Uma mão **rola** (aberta desce, indicador para cima sobe, indicador para o
-lado avança um link, punho para) e a outra **escolhe e clica sem mirar** (aberta vai ao
-próximo link, indicador deitado volta, indicador para cima por 2 s clica no selecionado). As
-duas juntas trocam de página. Qual mão faz o quê é escolha de quem usa: há **modo canhoto**.
-Os demais comandos voltam um a um, e cada um só entra depois de ficar confiável.
+</div>
 
-**Privacidade.** O vídeo nunca sai da máquina: câmera e modelo rodam localmente, e o que
-trafega entre os processos são só os gestos já reconhecidos. Nada é gravado nem enviado.
+Control **any website** with your hands, through the webcam. A Chrome extension (MV3) that
+turns the camera into a pointer, so that browsing stops depending on carrying a cursor to a
+small target and holding it there.
 
-A interface segue o idioma do navegador (inglês e português hoje; ver `public/_locales`).
+**Who it is for.** First, for anyone who cannot comfortably use a mouse: limited hand
+mobility, tremor, low strength or short reach. And, as a consequence, for anyone whose hands
+are busy or far from the desk: a speaker driving slides from across the stage, a teacher at
+the whiteboard, a pair of hands covered in flour with the recipe on screen.
+
+**Privacy.** The video never leaves the machine. Camera and model run locally, and what
+travels between processes is only the recognised gestures. Nothing is recorded and nothing is
+sent.
 
 ---
 
-## Instalação
+## The four poses
+
+One role per hand. This is the entire vocabulary.
+
+<table>
+<tr>
+<td align="center" width="25%"><img src=".github/pose-open.png" width="96" alt="Open hand"></td>
+<td align="center" width="25%"><img src=".github/pose-point.png" width="96" alt="Index finger up"></td>
+<td align="center" width="25%"><img src=".github/pose-side.png" width="96" alt="Index finger to the side"></td>
+<td align="center" width="25%"><img src=".github/pose-fist.png" width="96" alt="Closed fist"></td>
+</tr>
+<tr>
+<td align="center"><b>Open hand</b><br><sub>scrolls the page, or moves to the next link</sub></td>
+<td align="center"><b>Index finger up</b><br><sub>scrolls up, or clicks if you hold it two seconds</sub></td>
+<td align="center"><b>Index finger to the side</b><br><sub>steps from one link to the next</sub></td>
+<td align="center"><b>Closed fist</b><br><sub>locks everything, on either hand</sub></td>
+</tr>
+</table>
+
+The same pose means one thing on the hand that scrolls and another on the hand that picks, so
+the full mapping is:
+
+| Hand | Pose | Action |
+|---|---|---|
+| Scrolling hand | Open hand | Scroll the page down |
+| Scrolling hand | Index finger up | Scroll the page up |
+| Scrolling hand | Index finger to the side | Select the next link |
+| Scrolling hand | Closed fist | Stop everything |
+| Picking hand | Open hand | Select the next link |
+| Picking hand | Index finger to the side | Go back to the previous link |
+| Picking hand | Index finger up, held 2 s | Click the selected link |
+| Picking hand | Closed fist | Stop everything |
+| Both hands | Open hand + finger pointing right | Next page |
+| Both hands | Open hand + finger pointing left | Previous page |
+
+Which hand does what is yours to choose in the popup, and there is a **left-handed mode**.
+
+**The fist is the emergency brake, on both hands.** A closed fist on either hand cancels the
+other hand's gestures: nothing scrolls, nothing steps, nothing clicks, nothing changes page,
+and the status strip reads `Paused`. The easiest pose to form interrupts whatever is running,
+and the selection stays where it was: the fist pauses, it does not clear. `next_link` exists
+on both hands deliberately, because moving forward is the most frequent action, and two motor
+paths to the same command is redundancy in favour of anyone with limited control of one hand.
+
+Scrolling up needs the finger's direction on top of the pose (pointing down does not scroll
+up) and only starts after the pose holds for a quarter of a second: closing an open hand
+passes through a transient "point", since the index is the last finger to fold, and without
+the wait, stopping a scroll would hiccup in the opposite direction.
+
+Taking your hands out of frame stops everything. When it fails, it fails towards doing
+nothing.
+
+**Which hand is which: position decides, not the model's label.** The tracker gets the
+left/right label wrong often, and with fixed roles a swapped label inverts every command. So
+the role comes from body geometry: facing the camera, your left hand appears on the left side
+of the mirrored image, as in a mirror. With two hands in frame, position settles it; a hand
+left alone keeps the role it had, which is what lets the picking hand cross the centre to
+reach a link on the far side without "becoming" the other hand; only a brand new hand, with no
+history, uses the model's label. The same step eliminates the ghost hand: the same hand
+detected twice by MediaPipe.
+
+**Why these poses.** Open hand and fist are the two most separable shapes the tracker
+produces. Open requires only 4 of 5 fingers read as extended, which tolerates one badly
+tracked finger; the fist requires zero; and between them lies a wide dead band where a bad
+frame becomes no command at all. In the pointing pose only the index state matters: middle and
+ring count in favour even when half bent. The ring finger shares a tendon with the middle one
+and rarely folds completely, and it was exactly that requirement that made the natural
+pointing pose fail to register.
+
+**The picking hand chooses, it does not aim.** Carrying a cursor to a target and keeping it
+there is the hardest motor task an interface can ask for: tremor, drift and a poor camera all
+conspire against it. This vocabulary removes it. The selection steps **from link to link, in
+reading order**. Opening the hand moves forward; laying the index finger to the side goes back
+(either side, because the intent is "back", not a geometric direction); holding the pose keeps
+stepping, about 0.6 s per link. The fist **stops**, on both hands: there is a single resting
+pose in the whole vocabulary. A blue rectangle and the cursor dot show what is selected, and
+links covered by banners are skipped automatically. At the edges of the screen the selection
+stays put: it is the scrolling hand that reveals more links.
+
+**Clicking is holding the index finger up for 2 seconds**, with a progress arc filling around
+the selected link. Up clicks and sideways goes back, and between the two there is a wide dead
+band on the diagonal: a finger halfway does neither, on purpose. Going back still requires a
+quarter second of holding, because raising the finger to vertical passes through "sideways",
+and that journey must not step back a link by accident. Keeping the finger up produces a new
+click every 2 seconds: if the person is still there, it is because the page did not respond,
+and insisting is what they would do with a mouse. A brief stutter in reading the pose does not
+reset the count; opening the hand or closing the fist, which are clear intent, reset it
+immediately.
+
+**Lowering your hand does not lose the selection.** Anyone who gets tired rests their arm, and
+the link stays selected waiting for the click. For this project's audience, children and
+people with reduced mobility, holding an arm in the air is the real cost of using the
+interface, and the whole vocabulary was designed to minimise it.
+
+**Changing pages needs both hands, deliberately.** The picking hand lying to the side gives
+the direction (left for the previous page, right for the next, the browser's own arrows) and
+the open hand confirms, holding for about a second with an amber arc in the centre of the
+screen. It is the only action in the vocabulary that replaces the entire screen, so it is the
+only one that asks for two simultaneous poses: a combination like that does not happen by
+accident. It is one page per gesture: to go back twice, release and do it again. And while the
+combination holds, scrolling and stepping back are suspended, because it takes precedence.
+
+> Drag, zoom, pinch click, history, two-finger scroll and free cursor aiming are **disabled**.
+> The engine that recognises them is still in the repository, tested, to be reintroduced one
+> at a time. What is not in the vocabulary above does not act on the page.
+
+---
+
+## What it looks like on screen
+
+<div align="center">
+  <img src=".github/overlay.png" alt="The extension running over an article, with a gesture panel in each bottom corner and the status strip in the middle" width="100%">
+</div>
+
+Three layers, all of which can be switched off in the popup once you no longer need them.
+
+**Gesture guide, one panel per hand.** Bottom left for the hand that scrolls, bottom right for
+the one that clicks. Each line shows what the gesture does and the pose that forms it, which
+is the information people lack when they know a scroll gesture exists but cannot remember how
+to make it. The line for the command in progress lights up. A hand out of frame fades the
+whole panel: it answers "is it seeing me?" without having to try a gesture to find out.
+
+The highlight is never colour alone. The active line changes background, gains a bar on the
+left and writes `now`, so anyone who does not distinguish green still knows which one is
+active. `Stop` lights up red, not green, because stopping is the opposite of acting and the
+colour has to say so on its own.
+
+**Fingertips.** Five dots per hand, one colour per finger, warm tones on the left hand and
+cool tones on the right, because the first question anyone asks looking at the screen is which
+of the two is their right hand. The index gets a white ring, since it is the one driving the
+cursor. When tracking loses a finger, that becomes visible instantly, and the person has
+something to correct: hand position, lighting or framing.
+
+The fingertips go through the same mapping as the cursor, not through the whole camera frame.
+That is what makes the index dot land on the cursor it commands, instead of moving in a space
+of its own and contradicting the relationship between hand and pointer.
+
+**Status strip.** At the bottom, it says in words what is happening now: `Looking for your
+hands`, `Link selected`, `Scrolling down`, `Clicking`. The guide teaches the vocabulary; this
+says where in it you are.
+
+Only the five fingertips cross the IPC boundary: ten numbers per hand, not the hundred and
+thirty that all 21 landmarks would cost. It is enough to draw the tracking without the weight
+that kept the full skeleton out of the protocol.
+
+---
+
+## Install
+
+The published extension will be on the Chrome Web Store. Until then, there is a
+[test build with step by step instructions](https://hands.hinow.ai/beta/).
+
+From source:
 
 ```bash
 npm install
-npm run fetch:model     # baixa hand_landmarker.task (~7,5 MB), uma vez só
+npm run fetch:model     # downloads hand_landmarker.task (~7.5 MB), once
 npm run build
 ```
 
-Depois, em `chrome://extensions`: ative o **modo desenvolvedor**, clique em
-**Carregar sem compactação** e escolha a pasta `dist/`.
+Then, in `chrome://extensions`: turn on **Developer mode**, click **Load unpacked** and choose
+the `dist/` folder.
 
-Ative pelo ícone da extensão ou por <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. Na primeira
-ativação abre-se uma aba pedindo acesso à câmera: conceda ali, **uma vez para a extensão**, e
-vale para todos os sites, e não por site visitado.
+Turn it on from the extension icon or with <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. On
+first activation a tab opens asking for camera access: grant it there, **once for the
+extension**, and it counts for every site rather than per site visited.
 
-O pedido precisa dessa aba porque a câmera é aberta no documento offscreen, e um contexto sem
-interface não pode exibir a caixa de permissão do Chrome: pedir de lá volta negado sem
-perguntar nada. Como a permissão é gravada por origem, concedê-la numa página visível da
-extensão libera o offscreen de vez. Se o acesso tiver sido bloqueado antes, remova o bloqueio
-em `chrome://settings/content/camera` e ative de novo.
-
----
-
-## Os gestos
-
-Um papel por mão. É o vocabulário inteiro.
-
-| Mão | Gesto | Ação |
-|---|---|---|
-| Esquerda | 🖐️ **Mão aberta** | Rola a página para baixo |
-| Esquerda | ☝️ **Indicador para cima** | Rola a página para cima |
-| Esquerda | 👉 **Indicador para o lado** | Seleciona o próximo link |
-| Esquerda | ✊ **Punho fechado** | Para tudo |
-| Direita | 🖐️ **Mão aberta** | Seleciona o próximo link |
-| Direita | 👉 **Indicador para o lado** | Volta ao link anterior |
-| Direita | ☝️ **Indicador para cima, 2 s** | Clica no link selecionado |
-| Direita | ✊ **Punho fechado** | Para tudo |
-| As duas | 🖐️ **esquerda aberta** + 👉 **dedo direito p/ direita** | Próxima página |
-| As duas | 🖐️ **esquerda aberta** + 👈 **dedo direito p/ esquerda** | Página anterior |
-
-**O punho é o freio de emergência, nas duas mãos.** Um punho fechado em qualquer mão anula os
-gestos da outra: nada rola, nada anda, nada clica, nada troca de página, e o HUD escreve
-`Pausado`. A pose mais fácil de formar interrompe qualquer coisa em andamento, e a seleção fica
-onde está: punho pausa, não apaga. `next_link` existe nas duas mãos de propósito: avançar é a
-ação mais frequente, e dois caminhos motores para o mesmo comando são redundância a favor de
-quem tem controle limitado de uma das mãos.
-
-O rolar para cima exige a direção do dedo além da pose (apontar para baixo não sobe a tela) e
-só começa depois de a pose se sustentar por um quarto de segundo: fechar a mão aberta passa por
-um "apontar" transitório (o indicador é o último dedo a dobrar), e sem a espera parar de rolar
-daria um soluço na direção contrária.
-
-Tirar as mãos do quadro para tudo: a falha, quando houver, é para o lado de não executar nada.
-
-**Qual mão é qual: a posição decide, não o rótulo do modelo.** O rastreador erra o rótulo
-esquerda/direita com frequência, e com papéis fixos um rótulo trocado inverte os comandos.
-Então o papel vem da geometria do corpo: de frente para a câmera, a mão esquerda aparece do
-lado esquerdo da imagem espelhada, como num espelho. Com duas mãos no quadro a posição decide
-sozinha; uma mão que fica sozinha mantém o papel que tinha (é o que deixa a direita cruzar o
-centro para mirar um link à esquerda sem "virar esquerda"); só uma mão nova, sem histórico,
-usa o rótulo do modelo. O mesmo passo elimina a mão fantasma: a mesma mão detectada em dobro
-pelo MediaPipe.
-
-**Por que estas poses.** Mão aberta e punho são as duas mais separáveis que o rastreador
-produz. A aberta exige só 4 dos 5 dedos lidos como esticados (tolera um dedo mal rastreado),
-o punho exige zero, e entre as duas há uma zona morta larga onde um frame ruim não vira comando
-nenhum. No apontar, só o estado do indicador importa: médio e anelar contam a favor mesmo
-dobrados pela metade. O anelar compartilha tendão com o médio e raramente dobra por completo,
-e era exatamente essa exigência que fazia a pose natural de apontar não ser reconhecida.
-
-**A direita escolhe, não mira.** Levar um cursor até um alvo e mantê-lo lá é a tarefa motora
-mais difícil que uma interface pode pedir: tremor, deriva e câmera ruim conspiram contra ela.
-Este vocabulário a elimina: a seleção anda **de link em link, na ordem de leitura**. Abrir a
-mão avança; deitar o indicador para o lado volta (qualquer lado, porque a intenção é "voltar", não
-uma direção geométrica); manter a pose vai passando (~0,6 s por link). O punho **para**, nas
-duas mãos: a pose de descanso é uma só em todo o vocabulário. O retângulo azul e a bolinha do
-cursor mostram o que está selecionado, e links cobertos por banners são pulados
-automaticamente. Nas pontas da tela a seleção fica onde está: é a rolagem da esquerda que
-revela mais links.
-
-**O clique é sustentar o indicador para cima por 2 segundos**, com o arco de progresso
-enchendo ao redor do link selecionado. Cima clica e lado volta, e entre os dois há uma banda
-morta larga na diagonal: um dedo a meio caminho não faz nem um nem outro, de propósito. O
-voltar ainda exige um quarto de segundo de sustentação: levantar o dedo até a vertical passa
-pelo "lado", e esse trajeto não pode voltar um link sem querer. Mantendo o dedo para cima, um
-novo clique a cada 2 segundos: se a pessoa continua ali, é porque a página não respondeu, e
-insistir é o que ela faria com um mouse. Um vacilo curto na leitura da pose não zera a
-contagem; abrir a mão ou fechar o punho, que são intenção clara, zeram na hora.
-
-**Baixar a mão não perde a seleção.** Quem se cansa descansa o braço, e o link continua
-selecionado esperando o clique. Para o público deste projeto (crianças e pessoas com
-mobilidade reduzida), sustentar o braço no ar é o custo real de usar a interface, e o
-vocabulário inteiro foi desenhado para minimizá-lo.
-
-**Trocar de página exige as duas mãos, de propósito.** A direita deitada para o lado diz a
-direção (← página anterior, → próxima, as setas do navegador) e a esquerda aberta confirma,
-sustentando por ~1 segundo com um arco âmbar no centro da tela. É a única ação do vocabulário
-que substitui a tela inteira, então é a única que pede duas poses simultâneas: uma combinação
-dessas não se forma por acidente. É uma página por gesto: para voltar duas, solte e refaça. E,
-enquanto a combinação está de pé, a rolagem e o voltar-link ficam suspensos: ela tem
-precedência. A ordem natural é abrir a esquerda primeiro e então deitar o dedo direito.
-
-> Arraste, zoom, clique por pinça, histórico, a rolagem por dois dedos e a mira livre por
-> cursor estão **desativados**. O motor que os reconhece continua no repositório, testado,
-> para serem reintroduzidos um a um. O que não está no vocabulário acima não age na página.
+That request needs its own tab because the camera is opened in the offscreen document, and a
+context with no interface cannot show Chrome's permission prompt: asking from there comes back
+denied without asking anything. Since the permission is stored per origin, granting it on a
+visible page of the extension unlocks the offscreen document for good. If access was blocked
+before, remove the block in `chrome://settings/content/camera` and turn it on again.
 
 ---
 
-## Como funciona
+## How it works
 
-Três processos, cada um com uma responsabilidade.
+Three processes, each with one responsibility.
 
 ```
-  ┌───────────────────────┐   gestos    ┌──────────────────┐   gestos   ┌───────────────────┐
-  │  documento offscreen  │ ──────────► │  service worker  │ ─────────► │  content script   │
-  │  câmera + modelo +    │             │  roteia p/ a     │            │  cursor, HUD,     │
-  │  reconhecimento       │             │  aba ativa       │            │  ações na página  │
+  ┌───────────────────────┐  gestures   ┌──────────────────┐  gestures  ┌───────────────────┐
+  │  offscreen document   │ ──────────► │  service worker  │ ─────────► │  content script   │
+  │  camera + model +     │             │  routes to the   │            │  cursor, HUD,     │
+  │  recognition          │             │  active tab      │            │  page actions     │
   └───────────────────────┘             └──────────────────┘            └─────────┬─────────┘
                                                                                   │ postMessage
                                                                         ┌─────────▼─────────┐
                                                                         │  content script   │
-                                                                        │  dentro do iframe │
+                                                                        │  inside the frame │
                                                                         └───────────────────┘
 ```
 
-**Por que um documento offscreen.** A origem dele é a própria extensão, então a permissão de
-câmera vale para todos os sites de uma vez. E existe uma única instância da câmera e do modelo
-para o navegador inteiro, porque uma por aba seria inviável, já que a webcam é exclusiva.
+**Why an offscreen document.** Its origin is the extension itself, so the camera permission
+counts for every site at once. And there is a single instance of the camera and the model for
+the whole browser, because one per tab would be impossible, since the webcam is exclusive.
 
-**Como o site é operado.** Eventos sintéticos disparam os handlers de JavaScript de uma página,
-mas não os comportamentos nativos do navegador: um `wheel` sintético não rola nada por conta
-própria. Já um mapa escuta `wheel` em JS e faz o próprio zoom.
+**How the site is operated.** Synthetic events fire a page's JavaScript handlers, but not the
+browser's native behaviours: a synthetic `wheel` scrolls nothing by itself. A map, on the other
+hand, listens for `wheel` in JavaScript and does its own zoom.
 
-A saída é uma estratégia de duas camadas. Despachamos o evento real primeiro; se o site chamar
-`preventDefault()`, ele assumiu o controle e paramos por aí. Se ninguém cancelar, aplicamos nós
-mesmos o efeito nativo equivalente. O mesmo gesto rola uma página de notícias e dá zoom no
-Google Maps, sem que o código precise saber em qual dos dois está.
+The way out is a two-layer strategy. We dispatch the real event first; if the site calls
+`preventDefault()`, it has taken control and we stop there. If nobody cancels, we apply the
+equivalent native effect ourselves. The same gesture scrolls a news page and zooms Google Maps,
+without the code needing to know which of the two it is on.
 
-**Abas que já estavam abertas.** Content scripts declarados no manifest só entram em páginas
-carregadas depois da instalação. Para que "qualquer site" seja verdade desde o primeiro instante,
-o service worker injeta o script retroativamente nas abas existentes ao instalar, e sonda a aba
-com um ping antes de ativá-la, injetando se não houver resposta. Uma marca no lado do content
-script impede que a dupla entrada crie dois cursores.
+**Tabs that were already open.** Content scripts declared in the manifest only enter pages
+loaded after installation. For "any site" to be true from the first moment, the service worker
+injects the script retroactively into existing tabs on install, and pings a tab before
+activating it, injecting if there is no answer. A marker on the content script side stops the
+double entry from creating two cursors.
 
-**Iframes de outra origem.** O content script é injetado em todos os frames, então cada iframe
-tem a própria cópia rodando lá dentro, com acesso pleno ao seu DOM. O frame de cima detecta que
-o cursor está sobre um `<iframe>`, converte a coordenada para o sistema local daquele frame e
-manda o comando por `postMessage`, a única ponte que atravessa origens. É por isso que
-funciona no Maps sem chave de API e sem nenhuma cooperação do site.
-
----
-
-## O que dá a fluidez
-
-Não é acessório: é a maior parte da engenharia.
-
-**One Euro Filter.** O rastreamento tem ruído de alguns pixels por frame mesmo com a mão parada.
-Um filtro fixo remove o tremor mas adiciona lag, e lag mata a sensação de controle direto. O One
-Euro adapta a frequência de corte à velocidade: mão parada filtra forte e o cursor fica cravado
-(é o que permite acertar um link pequeno); movimento amplo quase não filtra e o cursor acompanha.
-
-**Interpolação a 60 fps.** O modelo entrega ~30 amostras por segundo. O cursor é interpolado a
-cada frame de animação, senão o movimento fica visivelmente escalonado.
-
-**Área ativa reduzida.** Só a região central do quadro mapeia para a tela inteira, então os
-cantos ficam alcançáveis sem esticar o braço até a borda do campo de visão, onde o rastreamento
-degrada.
-
-**Histerese e confirmação curta.** Cada gesto liga num limiar e desliga em outro, com uma banda
-morta entre eles. Sem isso, um valor oscilando em torno do limiar gera dezenas de cliques por
-segundo. A confirmação exige 3 frames consecutivos (~100 ms), rápido o bastante para parecer
-instantâneo.
-
-**Inércia na rolagem.** Um movimento rápido percorre bastante página, como no scroll por toque.
+**Cross-origin iframes.** The content script is injected into every frame, so each iframe has
+its own copy running inside it, with full access to its DOM. The top frame detects that the
+cursor is over an `<iframe>`, converts the coordinate into that frame's local system and sends
+the command by `postMessage`, the only bridge that crosses origins. That is why it works on
+Maps with no API key and no cooperation from the site.
 
 ---
 
-## O que dá a precisão
+## What makes it feel fluid
 
-> Esta seção descreve a mira fina para alvos pequenos. Com a seleção sequencial, a mira livre
-> por cursor saiu do caminho ativo, e com ela o magnetismo, o ganho adaptativo e o clique
-> armado, que ficam aqui porque voltam junto com o arraste. A estabilização da ponta continua
-> valendo para a direção do apontar da mão esquerda.
+This is not decoration: it is most of the engineering.
 
-Filtrar remove o tremor, não a amplificação. A área ativa amplia o quadro da câmera em cerca de
-cinco vezes até a tela, então cada pixel de erro do rastreamento vira cinco na tela, e nenhum
-filtro desfaz isso. Quatro mecanismos atacam a amplificação em si.
+**One Euro Filter.** Tracking has a few pixels of noise per frame even with a still hand. A
+fixed filter removes the shake but adds lag, and lag kills the sense of direct control. One
+Euro adapts its cutoff frequency to speed: a still hand filters hard and the cursor sits
+nailed down, which is what allows hitting a small link; a wide movement barely filters and the
+cursor keeps up.
 
-**Ganho adaptativo.** Movimento lento move o cursor a ~1/3 da distância da mão, que é de onde vem
-a mira fina; movimento rápido volta ao mapeamento absoluto. A correspondência com a posição
-absoluta é restaurada durante os movimentos amplos, quando a atenção não está na mira.
+**Interpolation at 60 fps.** The model delivers about 30 samples per second. The cursor is
+interpolated on every animation frame, otherwise the movement is visibly stepped.
 
-**Ponta do dedo estabilizada.** A ponta é o landmark mais ruidoso que o modelo produz, porque fica
-no fim da cadeia cinemática e acumula o erro de todas as juntas. Como um dedo esticado é
-aproximadamente reto, projetamos a ponta sobre o eixo definido por duas juntas internas, mais
-estáveis. O ruído perpendicular, que é quase todo o tremor lateral, desaparece.
+**Reduced active area.** Only the central region of the frame maps to the whole screen, so the
+corners are reachable without stretching your arm to the edge of the field of view, where
+tracking degrades.
 
-**Clique armado antes de fechar.** Unir os dedos desloca a mão inteira, então mirar e clicar na
-mesma coordenada seria impossível. A posição é congelada quando a pinça *começa* a fechar, e é
-ela que o clique usa.
+**Hysteresis and a short confirmation.** Each gesture turns on at one threshold and off at
+another, with a dead band between them. Without that, a value oscillating around the threshold
+produces dozens of clicks per second. Confirmation requires 3 consecutive frames, about 100 ms,
+fast enough to feel instant.
 
-**Magnetismo.** Dentro de ~26 px, o cursor é levado para dentro do alvo clicável. Aplicado apenas
-à posição visível: o alvo interno do ponteiro continua livre, então sair é tão fácil quanto
-entrar. Desliga sobre canvas, mapas e durante arrastes, onde a posição livre é o conteúdo.
+**Scroll inertia.** A quick movement covers a good stretch of page, as touch scrolling does.
 
-Medido em `npm run measure`, para tela 1920×1080 e tremor de mão de ~2 px no quadro:
+---
 
-| | antes | depois |
+## What makes it precise
+
+> This section describes fine aiming at small targets. With sequential selection, free cursor
+> aiming left the active path, and with it the magnetism, the adaptive gain and the armed
+> click, which stay here because they come back together with drag. Fingertip stabilisation
+> still applies to the pointing direction of the scrolling hand.
+
+Filtering removes the shake, not the amplification. The active area magnifies the camera frame
+about five times up to the screen, so every pixel of tracking error becomes five on screen, and
+no filter undoes that. Four mechanisms attack the amplification itself.
+
+**Adaptive gain.** Slow movement moves the cursor about a third of the hand's distance, which
+is where fine aiming comes from; fast movement returns to absolute mapping. Correspondence
+with the absolute position is restored during wide movements, when attention is not on aiming.
+
+**Stabilised fingertip.** The tip is the noisiest landmark the model produces, because it sits
+at the end of the kinematic chain and accumulates the error of every joint. Since an extended
+finger is approximately straight, we project the tip onto the axis defined by two inner joints,
+which are more stable. The perpendicular noise, which is almost all of the lateral shake,
+disappears.
+
+**Click armed before closing.** Bringing the fingers together displaces the whole hand, so
+aiming and clicking at the same coordinate would be impossible. The position is frozen when the
+pinch *starts* to close, and that is the one the click uses.
+
+**Magnetism.** Within about 26 px, the cursor is pulled inside the clickable target. Applied
+only to the visible position: the pointer's internal target stays free, so leaving is as easy
+as entering. It switches off over canvas, maps and during drags, where the free position is the
+content.
+
+Measured with `npm run measure`, for a 1920×1080 screen and hand tremor of about 2 px in frame:
+
+| | before | after |
 |---|---|---|
-| Oscilação do cursor parado | 14,8 px | **2,4 px** |
-| Menor alvo confortável | ~30 px | **~5 px** |
-| Ruído da ponta do dedo | 46,9 px | **11,7 px** (−75%) |
+| Cursor wobble while still | 14.8 px | **2.4 px** |
+| Smallest comfortable target | ~30 px | **~5 px** |
+| Fingertip noise | 46.9 px | **11.7 px** (−75%) |
 
-E em navegador real, sobre alvos a até 26 px do cursor: **0% de acerto sem magnetismo, 100% com**.
+And in a real browser, over targets within 26 px of the cursor: **0% hit rate without
+magnetism, 100% with it**.
 
-Os números do medidor usam um modelo de ruído; o rastreamento real traz outros erros, então
-espere um resultado melhor que antes, não exatamente estes valores.
+The meter's numbers use a noise model; real tracking brings other errors, so expect a better
+result than before, not exactly these values.
 
 ---
 
-## Detecção invariante
+## Invariant detection
 
-O detector mede **ângulos de articulação** (invariantes a rotação e escala) e normaliza toda
-distância pelo tamanho da própria palma, o que a torna independente da distância à câmera.
+The detector measures **joint angles**, which are invariant to rotation and scale, and
+normalises every distance by the size of the palm itself, which makes it independent of the
+distance to the camera.
 
-A abordagem ingênua ("a ponta do dedo tem Y menor que a junta, logo está esticado") só funciona
-com a mão vertical e de frente. Comparação medida sobre as mesmas entradas sintéticas:
+The naive approach ("the fingertip has a smaller Y than the joint, therefore it is extended")
+only works with the hand vertical and facing forward. Measured comparison over the same
+synthetic inputs:
 
-| | detector ingênuo | este |
+| | naive detector | this one |
 |---|---|---|
-| Sob rotação da mão | 45% correto | **100%** |
-| Sob variação de escala | 64% correto | **100%** |
+| Under hand rotation | 45% correct | **100%** |
+| Under scale variation | 64% correct | **100%** |
 
-O caso mais grave da abordagem ingênua: com a mão a 180°, um punho é lido como mão aberta.
-São gestos de ações opostas.
+The worst case of the naive approach: with the hand at 180°, a fist reads as an open hand.
+Those are gestures with opposite actions.
 
 ```bash
-npm test              # 41 asserções sobre o motor
-npm run test:legacy   # a comparação acima, reproduzível
-npm run measure       # relatório de precisão em pixels
+npm test              # assertions over the engine
+npm run test:legacy   # the comparison above, reproducible
+npm run measure       # precision report, in pixels
 ```
 
 ---
 
-## Campo de teste
+## Test field
 
 ```bash
 npm run demo      # http://localhost:5599
 ```
 
-Exercita alvos de clique de tamanhos decrescentes, rolagem em container aninhado, arraste,
-zoom em imagem e um canvas que cancela os próprios eventos (como um mapa).
+It exercises click targets of decreasing size, scrolling in a nested container, drag, image
+zoom and a canvas that cancels its own events, like a map does.
 
-Para testar iframe de outra origem, suba uma segunda instância e abra `/iframe-test.html`:
+To test a cross-origin iframe, start a second instance and open `/iframe-test.html`:
 
 ```bash
 PORT=5600 npm run demo
@@ -284,109 +370,81 @@ PORT=5600 npm run demo
 
 ---
 
-## Ajustes
+## Settings
 
-No popup da extensão:
+In the extension popup:
 
-- **Aparência do painel**: claro ou escuro.
-- **Instruções na tela**: os dois painéis de gestos nos cantos, com aparência clara ou escura
-  independente da do painel: a página que se lê pode ser escura e o painel de configuração claro.
-- **Painel de estado** e **pontas dos dedos** (diagnóstico): o que mais aparece sobre a página.
-- **Área de alcance**: quanto do quadro mapeia para a tela. Menor exige menos movimento de braço.
-- **Estabilidade do cursor**: corte mínimo do filtro. Menor deixa mais firme, com um pouco mais de lag.
-- **Velocidade da rolagem**: quanto o movimento da mão é ampliado.
-
-## A arte
-
-Os desenhos de mão e o logo vivem em `art/`, fora do pacote, como line-art preto sobre fundo
-branco. `npm run art` os converte em **máscaras** (o desenho vira o canal alfa e a cor sai da
-imagem) que o CSS pinta com `currentColor`. É o que faz o mesmo arquivo servir aos dois temas
-sem uma segunda arte invertida, e o que derruba 3,6 MB de PNG para 56 kB dentro da extensão.
-Trocar um desenho é substituir o arquivo em `art/` e rodar o script de novo.
+- **Panel appearance**: light or dark.
+- **On-screen instructions**: the two gesture panels in the corners, with light or dark
+  appearance independent of the panel's own: the page being read may be dark while the
+  settings panel is light.
+- **Status strip** and **fingertips** (diagnostic): what shows most over the page.
+- **Reach area**: how much of the frame maps to the screen. Smaller asks for less arm movement.
+- **Cursor stability**: the filter's minimum cutoff. Lower is steadier, with slightly more lag.
+- **Scroll speed**: how much the hand movement is amplified.
 
 ---
 
-## O que aparece na tela
+## The art
 
-Três camadas, todas desligáveis no popup para quem já não precisa delas.
+The hand drawings and the logo live in `art/`, outside the package, as black line art on a
+white background. `npm run art` converts them into **masks**, where the drawing becomes the
+alpha channel and the colour leaves the image, which CSS then paints with `currentColor`. That
+is what lets the same file serve both themes without a second inverted artwork, and what brings
+3.6 MB of PNG down to 56 kB inside the extension. Replacing a drawing means replacing the file
+in `art/` and running the script again.
 
-**Guia de gestos, um painel por mão.** Canto inferior esquerdo para a mão que rola, direito
-para a que clica. Cada linha traz o que o gesto faz e a pose que o forma, a informação que
-falta quando alguém sabe que existe um gesto de rolar mas não lembra como fazê-lo. A linha do
-comando em curso acende. Mão fora do quadro esmaece o painel inteiro: é a resposta à pergunta
-"ele está me vendo?" sem precisar testar um gesto para descobrir.
-
-O destaque nunca é só a cor. A linha ativa muda de fundo, ganha uma barra à esquerda e escreve
-`agora`: quem não distingue o verde continua sabendo qual está ativa. O `Parar` acende em
-vermelho, não em verde: parar é o oposto de agir, e a cor precisa dizer isso sozinha.
-
-**Pontas dos dedos.** Cinco bolinhas por mão, uma cor por dedo, mão esquerda em tons quentes e
-direita em tons frios, porque a primeira pergunta de quem olha a tela é qual das duas é a sua mão
-direita. O indicador leva um anel branco por ser o que comanda o cursor. Quando o rastreamento
-perde um dedo, isso fica visível no mesmo instante, e a pessoa tem o que corrigir: a posição da
-mão, a luz ou o enquadramento.
-
-As pontas passam pela mesma conversão do cursor, e não pelo quadro inteiro da câmera. É o que faz
-a bolinha do indicador cair sobre o cursor que ela comanda, em vez de andar num espaço próprio e
-desmentir a relação entre a mão e o ponteiro.
-
-**Painel de estado.** No rodapé, diz em palavras o que está acontecendo agora: `Procurando as
-mãos`, `Link selecionado`, `Rolando para baixo`, `Clicando`. O guia ensina o vocabulário;
-este diz em que ponto dele você está.
-
-Só as cinco pontas atravessam o IPC: dez números por mão, não os cento e trinta que os 21
-landmarks custariam. É o suficiente para desenhar o rastreamento sem o peso que motivou deixar o
-esqueleto inteiro fora do protocolo.
+`npm run art:readme` regenerates the images in `.github/` from that same art and from the
+overlay's own CSS, so the pictures in this file cannot drift away from the product.
 
 ---
 
-## Limitações conhecidas
+## Known limitations
 
-- Páginas internas do Chrome (`chrome://`, a Web Store) não aceitam content scripts. Nada funciona
-  nelas, e nem pode.
-- PDFs no visualizador nativo e vídeo protegido por DRM não expõem o conteúdo ao DOM: o cursor
-  aparece, mas não há elemento para clicar.
-- Digitar texto não está implementado: o teclado continua necessário para campos de entrada.
-- Só a aba ativa recebe gestos, por decisão de projeto: uma câmera, uma aba.
-- O reconhecimento cai de qualidade com iluminação muito fraca ou contraluz forte.
+- Chrome's internal pages (`chrome://`, the Web Store) do not accept content scripts. Nothing
+  works there, and nothing can.
+- PDFs in the native viewer and DRM-protected video do not expose their content to the DOM: the
+  cursor appears, but there is no element to click.
+- Typing text is not implemented: the keyboard is still needed for input fields.
+- Only the active tab receives gestures, by design: one camera, one tab.
+- Recognition degrades with very low light or strong backlight.
 
 ---
 
-## Estrutura
+## Structure
 
 ```
-src/core/        motor independente de navegador
-  filters.ts       One Euro, histerese, estabilização
-  handModel.ts     geometria da mão, invariância
-  gestures.ts      vocabulário e reconhecimento
-  pointer.ts       mapeamento mão→tela, clutch, inércia
-  wire.ts          formato trocado entre processos
-src/content/     o que age dentro da página
-  synth.ts         síntese de eventos, duas camadas
-  controller.ts    máquina de estados
-  overlay.ts       cursor e realce (Shadow DOM)
-  imageZoom.ts     visualizador de imagem
-  frames.ts        ponte para iframes
-  frameAgent.ts    executor dentro de um iframe
-src/core/
-  handedness.ts    qual mão é qual, pela posição no corpo
-  spatial.ts       escolha de alvo por direção
-src/content/
-  targets.ts       coleta de links da página
-src/offscreen/   câmera, modelo, reconhecimento
-src/background/  ciclo de vida e roteamento
-src/popup/       painel de controle
-art/             arte de origem (fora do pacote) → npm run art
-public/_locales/ traduções; o idioma segue o navegador
+src/core/        browser-independent engine
+  filters.ts       One Euro, hysteresis, stabilisation
+  handModel.ts     hand geometry, invariance
+  gestures.ts      vocabulary and recognition
+  pointer.ts       hand to screen mapping, clutch, inertia
+  handedness.ts    which hand is which, from body position
+  spatial.ts       target choice by direction
+  wire.ts          format exchanged between processes
+src/content/     what acts inside the page
+  synth.ts         event synthesis, two layers
+  controller.ts    state machine
+  overlay.ts       cursor and highlight (Shadow DOM)
+  targets.ts       link collection from the page
+  imageZoom.ts     image viewer
+  frames.ts        bridge to iframes
+  frameAgent.ts    executor inside an iframe
+src/offscreen/   camera, model, recognition
+src/background/  lifecycle and routing
+src/popup/       control panel
+art/             source art (outside the package) → npm run art
+public/_locales/ translations; the language follows the browser
+store/           Chrome Web Store listing material
 ```
 
 ---
 
-## Licença
+## License
 
-Faça o que quiser com este código (use, altere, redistribua, venda), com **uma condição**:
-mantenha um link visível para [hands.hinow.ai](https://hands.hinow.ai) em qualquer cópia ou
-derivado. "Visível" quer dizer alcançável por quem usa o software sem abrir o código: uma tela
-"sobre", um rodapé, a página da loja. Os termos completos estão em [LICENSE](LICENSE).
+Do what you want with this code (use it, change it, redistribute it, sell it), with **one
+condition**: keep a visible link to [hands.hinow.ai](https://hands.hinow.ai) in any copy or
+derivative. "Visible" means reachable by someone using the software without opening the code:
+an about screen, a footer, the store page. The full terms are in [LICENSE](LICENSE).
 
-O projeto é gratuito e de código aberto porque acessibilidade não deveria ter pedágio.
+The project is free and open source because accessibility should not come with a toll.
