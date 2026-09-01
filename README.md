@@ -5,6 +5,12 @@
 </a>
 
 <p>
+  <b>English</b>
+  &nbsp;&middot;&nbsp;
+  <a href="README.pt-BR.md">Português</a>
+</p>
+
+<p>
   <a href="https://hands.hinow.ai"><strong>hands.hinow.ai</strong></a>
   &nbsp;&middot;&nbsp;
   <a href="https://hands.hinow.ai/beta/">Install the test build</a>
